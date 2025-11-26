@@ -34,42 +34,69 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
   };
 
   return (
-    <LinearGradient colors={['#0F8154', '#0F8154', '#1A5F7A']} style={styles.gradient}>
+    <LinearGradient colors={['#0B7A4D', '#0A6B43', '#085C3A']} style={styles.gradient}>
       <SafeAreaView style={styles.safe}>
         <ScrollView
           contentContainerStyle={[styles.scroll, { paddingHorizontal: horizontalGutter }]}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           <View style={[styles.inner, { maxWidth: contentWidth }]}>
+            {/* Hero Section */}
             {mode === 'select' && (
-              <View style={styles.logoWrapper}>
+              <View style={styles.heroSection}>
+                {/* Logo Badge */}
                 <View style={styles.logoBadge}>
-                  <Image source={logo} style={styles.logo} resizeMode="contain" />
+                  <View style={styles.logoInner}>
+                    <Image source={logo} style={styles.logo} resizeMode="contain" />
+                  </View>
                 </View>
-                <Text style={styles.headline}>Bolsa de Empleo CAIL</Text>
-                <Text style={styles.subtitle}>Cámara de Industrias de Loja</Text>
-                <Text style={styles.tagline}>Gestión de Perfiles - Acceso al sistema</Text>
+
+                {/* Hero Text */}
+                <View style={styles.heroText}>
+                  <View style={styles.heroPill}>
+                    <Feather name="briefcase" size={14} color="#FFFFFF" />
+                    <Text style={styles.heroPillText}>CAIL</Text>
+                  </View>
+                  <Text style={styles.headline}>Bolsa de Empleo</Text>
+                  <Text style={styles.subtitle}>Cámara de Industrias de Loja</Text>
+                </View>
               </View>
             )}
 
+            {/* Selection Mode - Role Cards */}
             {mode === 'select' ? (
-              <View style={[styles.options, (isTablet || isDesktop) && styles.optionsWide]}>
-                <RoleButton
-                  title="Soy Candidato"
-                  description="Busco empleo"
-                  icon="user"
-                  onPress={() => handleRoleSelect('candidate')}
-                />
-                <RoleButton
-                  title="Soy Empleador"
-                  description="Busco personal"
-                  icon="briefcase"
-                  accent="employer"
-                  onPress={() => handleRoleSelect('employer')}
-                />
-                <Text style={styles.footerText}>Conectando talento con oportunidades en Loja</Text>
+              <View style={[styles.selectionSection, (isTablet || isDesktop) && styles.selectionWide]}>
+                <View style={styles.roleCards}>
+                  <RoleCard
+                    title="Soy Candidato"
+                    description="Busco oportunidades laborales"
+                    icon="user"
+                    color="#0B7A4D"
+                    features={['Explorar ofertas', 'Postular empleos', 'Gestionar perfil']}
+                    onPress={() => handleRoleSelect('candidate')}
+                  />
+                  
+                  <RoleCard
+                    title="Soy Empleador"
+                    description="Busco talento para mi empresa"
+                    icon="briefcase"
+                    color="#F59E0B"
+                    features={['Publicar vacantes', 'Revisar candidatos', 'Gestionar procesos']}
+                    onPress={() => handleRoleSelect('employer')}
+                  />
+                </View>
+
+                {/* Footer */}
+                <View style={styles.footer}>
+                  <Feather name="shield" size={16} color="rgba(255,255,255,0.6)" />
+                  <Text style={styles.footerText}>
+                    Conectando talento con oportunidades en Loja
+                  </Text>
+                </View>
               </View>
             ) : (
+              /* Login/Register Forms */
               <Card
                 tone="accent"
                 spacing="lg"
@@ -106,32 +133,50 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
   );
 }
 
-function RoleButton({
+function RoleCard({
   title,
   description,
   icon,
+  color,
+  features,
   onPress,
-  accent = 'candidate',
 }: {
   title: string;
   description: string;
   icon: keyof typeof Feather.glyphMap;
+  color: string;
+  features: string[];
   onPress: () => void;
-  accent?: 'candidate' | 'employer';
 }) {
-  const iconBgColor = accent === 'candidate' ? '#0F8154' : '#F59E0B';
-  
   return (
-    <TouchableOpacity onPress={onPress}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.9}>
       <View style={styles.roleCard}>
-        <View style={[styles.roleIcon, { backgroundColor: iconBgColor }]}>
-          <Feather name={icon} size={24} color="#fff" />
+        {/* Header */}
+        <View style={styles.roleHeader}>
+          <View style={[styles.roleIcon, { backgroundColor: color }]}>
+            <Feather name={icon} size={28} color="#FFFFFF" />
+          </View>
+          <View style={styles.roleHeaderText}>
+            <Text style={styles.roleTitle}>{title}</Text>
+            <Text style={styles.roleDescription}>{description}</Text>
+          </View>
         </View>
-        <View style={styles.roleContent}>
-          <Text style={styles.roleTitle}>{title}</Text>
-          <Text style={styles.roleDescription}>{description}</Text>
+
+        {/* Features List */}
+        <View style={styles.featuresList}>
+          {features.map((feature, index) => (
+            <View key={index} style={styles.featureItem}>
+              <View style={[styles.featureDot, { backgroundColor: color }]} />
+              <Text style={styles.featureText}>{feature}</Text>
+            </View>
+          ))}
         </View>
-        <Feather name="arrow-right" size={24} color="#0F8154" />
+
+        {/* Action Button */}
+        <View style={styles.roleAction}>
+          <Text style={[styles.roleActionText, { color }]}>Continuar</Text>
+          <Feather name="arrow-right" size={20} color={color} />
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -146,72 +191,152 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flexGrow: 1,
-    paddingVertical: 24,
+    paddingVertical: 32,
     justifyContent: 'center',
   },
   inner: {
     width: '100%',
     alignSelf: 'center',
-    gap: 12,
+    gap: 24,
   },
-  logoWrapper: {
+
+  // Hero Section
+  heroSection: {
     alignItems: 'center',
-    marginBottom: 40,
+    gap: 20,
+    paddingBottom: 12,
   },
   logoBadge: {
-    padding: 12,
+    width: 96,
+    height: 96,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  logoInner: {
+    width: 80,
+    height: 80,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    marginBottom: 16,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 8,
   },
   logo: {
-    width: 72,
-    height: 72,
+    width: '100%',
+    height: '100%',
   },
-  headline: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: 4,
+  heroText: {
+    alignItems: 'center',
+    gap: 8,
   },
-  subtitle: {
-    color: 'rgba(255,255,255,0.9)',
-    marginTop: 4,
-    fontWeight: '500',
-    fontSize: 16,
-  },
-  tagline: {
-    color: 'rgba(255,255,255,0.75)',
-    marginTop: 8,
-    textAlign: 'center',
-    lineHeight: 20,
-    fontSize: 14,
-  },
-  options: {
-    gap: 16,
-  },
-  optionsWide: {
-    maxWidth: 680,
-    alignSelf: 'center',
-  },
-  roleCard: {
+  heroPill: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  heroPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 1,
+  },
+  headline: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.9)',
+    textAlign: 'center',
+  },
+  featureRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  featurePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  featurePillText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.9)',
+  },
+
+  // Selection Section
+  selectionSection: {
+    gap: 20,
+  },
+  selectionWide: {
+    maxWidth: 720,
+    alignSelf: 'center',
+  },
+  sectionHeader: {
+    alignItems: 'center',
+    gap: 6,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+    textAlign: 'center',
+  },
+
+  // Role Cards
+  roleCards: {
     gap: 16,
-    backgroundColor: '#fff',
-    padding: 20,
+  },
+  roleCard: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
+    padding: 20,
+    gap: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  roleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
   },
   roleIcon: {
-    padding: 14,
-    borderRadius: 12,
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  roleContent: {
+  roleHeaderText: {
     flex: 1,
     gap: 4,
   },
@@ -221,22 +346,68 @@ const styles = StyleSheet.create({
     color: '#1F2937',
   },
   roleDescription: {
-    color: '#6B7280',
-    lineHeight: 18,
     fontSize: 14,
+    color: '#6B7280',
+    lineHeight: 20,
+  },
+
+  // Features List
+  featuresList: {
+    gap: 10,
+    paddingLeft: 4,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  featureDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  featureText: {
+    fontSize: 13,
+    color: '#4B5563',
+    flex: 1,
+  },
+
+  // Role Action
+  roleAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  roleActionText: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+
+  // Footer
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 8,
   },
   footerText: {
+    fontSize: 13,
     color: 'rgba(255,255,255,0.7)',
     textAlign: 'center',
-    marginTop: 24,
-    fontSize: 14,
   },
+
+  // Form Card
   formCard: {
-    marginTop: 12,
+    marginTop: 0,
     overflow: 'visible',
   },
   formCardWide: {
-    maxWidth: 760,
+    maxWidth: 560,
     alignSelf: 'center',
   },
 });

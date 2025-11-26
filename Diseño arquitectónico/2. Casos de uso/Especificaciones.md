@@ -1,184 +1,174 @@
-<p align="right">
-  <img src="https://i.postimg.cc/13qQdqZs/utpllogo.png" alt="Logo UTPL" width="150"/>
-</p>
-
-<h1 align='center'>
-  Diagrama de Casos de Uso 
-  <br>
-  Aplicación Bolsa de Empleos "CAIL"
-</h1>
-
----
 
 
 
-## **¿Qué es un Diagrama de Casos de Uso?**
+#  Diagramas de Casos de Uso (Detallados)
 
-Un **Diagrama de Casos de Uso** es una herramienta fundamental del Lenguaje Unificado de Modelado (UML) que se utiliza para describir gráficamente las **funcionalidades de un sistema** desde la perspectiva del usuario. Representa las interacciones entre los **"actores"** (usuarios o sistemas externos) y el **"sistema"** para alcanzar un objetivo específico.
+## ¿Qué son los diagramas de casos de uso?
+
+Los **diagramas de casos de uso** son una herramienta fundamental del Lenguaje Unificado de Modelado (UML) que se utilizan para describir gráficamente las **funcionalidades de un sistema** desde la perspectiva del usuario. Representan las interacciones entre los **"actores"** (usuarios o sistemas externos) y el **"sistema"** para alcanzar un objetivo específico.
 
 En esencia, este diagrama no describe *cómo* funciona el sistema internamente, sino *qué* hace el sistema en respuesta a las solicitudes de un actor para proporcionarle un resultado de valor.
 
----
+## Estructura General
 
-## **Propósito Principal de un Diagrama de Casos de Uso**
+  * **Actor:** Representa cualquier entidad externa que interactúa con el sistema (un usuario humano, otro software, un dispositivo).
+  * **Caso de Uso:** Representa una funcionalidad específica que el sistema proporciona para entregar un resultado de valor al actor (ej. "Publicar Oferta Laboral", "Validar Candidato").
+  * **Relaciones:**
+      * **Asociación:** Una línea sólida que conecta a un actor con un caso de uso. Indica que el actor participa en esa funcionalidad.
+      * **Inclusión (`<<include>>`):** Una flecha punteada que indica que un caso de uso *siempre* invoca a otro (ej. "Administrar Postulaciones" `<<include>>` "Evaluar Perfil"). Se usa para reutilizar funcionalidad obligatoria.
+      * **Extensión (`<<extend>>`):** Una flecha punteada que indica que un caso de uso *opcionalmente* puede extender a otro (ej. "Buscar Ofertas" `<<extend>>` "Aplicar Filtros Avanzados").
 
-El objetivo principal de este diagrama es capturar y comunicar los **requisitos funcionales** del sistema de una manera clara y concisa. Sirve para:
+-----
 
-* **Definir el Alcance:** Establece claramente qué debe hacer el sistema y qué queda fuera de sus límites.
-* **Facilitar la Comunicación:** Actúa como un lenguaje común entre los *stakeholders* (como los directivos de la Cámara de Industrias) y el equipo de desarrollo.
-* **Identificar Actores:** Clarifica quién (o qué) interactuará con el sistema.
-* **Guiar el Desarrollo y las Pruebas:** Cada caso de uso sirve como base para planificar la arquitectura, el desarrollo y, fundamentalmente, los casos de prueba.
+## 1\. MÓDULO GESTIÓN DE PERFILES
 
----
+Este módulo detalla los procesos de registro, validación y administración de los actores principales.
 
-## **Estructura y Componentes Clave**
+### Diagrama 1.1: Administración de Empleadores
 
-Un diagrama de casos de uso se compone de pocos elementos, lo que facilita su comprensión:
+**Descripción Técnica:**
+Este diagrama modela el flujo de alta de una nueva empresa en la plataforma.
 
-1.  **Actor:**
-    * Representa cualquier entidad externa que interactúa con el sistema (un usuario humano, otro software, un dispositivo).
-    * Se dibuja como una figura humana.
+1.  **Actores:** Gerente, Recursos Humanos, Usuario, Empresa, CAIL.
+2.  **Proceso de Registro:** El **Usuario** (representante de la empresa) inicia el proceso "Ingresar datos de empresa".
+3.  **Validación:** Se desencadena una inclusión (`<<include>>`) hacia el proceso "Validar empresas".
+4.  **Aprobación:** El actor **CAIL** (Cámara de Industrias) interviene como entidad certificadora para validar la legitimidad de la empresa.
 
-2.  **Caso de Uso:**
-    * Representa una funcionalidad específica que el sistema proporciona para entregar un resultado de valor al actor (ej. "Publicar Oferta Laboral", "Validar Candidato").
-    * Se dibuja como un **óvalo**.
+![WhatsApp Image 2025-11-26 at 07 18 40](https://github.com/user-attachments/assets/e298a77b-a8af-4c1b-b725-cffe86971140)
 
-3.  **Sistema:**
-    * Un **rectángulo** que delimita el alcance del sistema. Los casos de uso se dibujan *dentro* de este límite y los actores *fuera*.
 
-4.  **Relaciones:**
-    * **Asociación:** Una línea sólida que conecta a un actor con un caso de uso. Indica que el actor participa en esa funcionalidad.
-    * **Inclusión (`<<include>>`):** Una flecha punteada que indica que un caso de uso *siempre* invoca a otro (ej. "Administrar Postulaciones" `<<include>>` "Evaluar Perfil"). Se usa para reutilizar funcionalidad obligatoria.
-    * **Extensión (`<<extend>>`):** Una flecha punteada que indica que un caso de uso *opcionalmente* puede extender a otro (ej. "Buscar Ofertas" `<<extend>>` "Aplicar Filtros Avanzados").
+### Diagrama 1.2: Administración de Candidatos
 
----
+**Descripción Técnica:**
+Describe el registro del perfil profesional del postulante y su validación cruzada con entes gubernamentales.
 
-# **Casos de Uso del Sistema de Gestión de Postulaciones**
+1.  **Actores:** Candidato, Registro Civil, Senescyt, Bolsa.
+2.  **Ingreso de Datos:** El **Candidato** ejecuta la acción "Ingresar datos del postulante".
+3.  **Sub-procesos (`<<include>>`):** El sistema obliga a completar dos flujos:
+      * "Ingresar información personal".
+      * "Ingresar información profesional".
+4.  **Interoperabilidad:**
+      * La "Validar cedula" se realiza contra el actor externo **Registro Civil**.
+      * La "Validar candidatos" (títulos) se consulta con el actor externo **Senescyt**.
+5.  **Confirmación:** El actor **Bolsa** actúa como orquestador final del registro.
+![WhatsApp Image 2025-11-26 at 07 18 40 (1)](https://github.com/user-attachments/assets/7fc32c2b-acaf-4af2-a06d-fd303273338b)
+-----
 
-Basado en el Mapa de Capacidades, se identifican los siguientes actores y casos de uso principales:
+## 2\. MÓDULO GESTIÓN DE OFERTAS LABORALES
 
-## **Actores Principales**
+Abarca el ciclo de vida completo de una vacante, desde su creación hasta su cierre.
 
-1.  **Candidato:** (O Postulante) Usuario que busca empleo. Su objetivo es registrar su perfil, buscar ofertas y postularse.
-2.  **Empleador:** Representante de una empresa. Su objetivo es registrar la empresa, publicar ofertas de trabajo y gestionar los candidatos que se postulan.
-3.  **Administrador del Sistema:** Rol interno de supervisión. Su objetivo es mantener la integridad de la plataforma, validando nuevos empleadores y candidatos.
+### Diagrama 2.1: Definición de Vacantes
 
----
+**Descripción Técnica:**
+Muestra la creación estructurada de una oferta de empleo.
 
-## **1. Diagrama de Caso de Uso: Gestión de Postulaciones**
+1.  **Actores:** Gerente, Reclutador, Usuario, Oferta, Bolsa.
+2.  **Creación:** El **Reclutador** o **Gerente** inicia el caso de uso "Ingresar oferta laboral".
+3.  **Estructura de Datos (`<<include>>`):**
+      * Se define la "Descripción de oferta" (título, salario, modalidad).
+      * Se establecen los "Perfiles requeridos" (competencias, experiencia).
+4.  **Publicación:** Finalmente, el **Usuario** ejecuta la acción "Publicar postulación", haciendo visible la oferta en la **Bolsa**.
+![WhatsApp Image 2025-11-26 at 07 19 44](https://github.com/user-attachments/assets/d2f2f38a-f621-498a-ba44-1760c2032548)
 
-Este diagrama cubre la administración de los actores clave del sistema.
 
-<img width="1242" height="1068" alt="Casos_USO_CAIL (1)" src="https://github.com/user-attachments/assets/eb61c4ea-2b03-4309-8b72-f47c32023fd3" />
+### Diagrama 2.2: Gestión del Ciclo de Vida de la Oferta
 
+**Descripción Técnica:**
+Este diagrama detalla el mantenimiento y cierre de las ofertas existentes.
 
-### **Módulo: Gestión de perfiles (Administración de empleadores)**
+1.  **Actores:** Gerente, Reclutador, Usuario, Bolsa.
+2.  **Administración Activa:** El **Reclutador** gestiona la oferta mediante "Administrar oferta", lo que incluye (`<<include>>`):
+      * "Verificar oferta": Monitoreo de estado.
+      * "Actualizar oferta": Modificación de datos.
+3.  **Cierre de Ciclo:** Para las ofertas que han concluido, se ejecuta "Administrar ofertas finalizadas".
+4.  **Acciones de Cierre (`<<extends>>`):**
+      * "Archivar oferta": Para guardar histórico.
+      * "Retirar oferta": Para eliminarla de la vista pública en la **Bolsa**.
+![WhatsApp Image 2025-11-26 at 07 19 45](https://github.com/user-attachments/assets/7daabef9-da53-4cfd-ae9c-cdd15c2b6529)
 
-**Especificación (Ingresar datos de empresa)**
+-----
 
-| Nombre | Ingresar datos de empresa |
-| :--- | :--- |
-| **Actores** | - Empleador/Empresa |
-| **Flujo normal** | - El Empleador/Empresa inicia el proceso de registro en el sistema.<br>- El Empleador/Empresa completa el formulario con los datos de la compañía (RUC, razón social, dirección, contacto, etc.).<br>- El Empleador/Empresa guarda y envía el formulario.<br>- El sistema registra los datos de la empresa y la marca como "Pendiente de Validación". |
+## 3\. MÓDULO DESCUBRIMIENTO Y POSTULACIÓN
 
-**Especificación (Validar empresas)**
+Se centra en la inteligencia de negocio para conectar candidatos con ofertas (Matching) y analítica.
 
-| Nombre | Validar empresas |
-| :--- | :--- |
-| **Actores** | - Administrador del sistema |
-| **Flujo normal** | - El Administrador del sistema accede al panel de empresas pendientes de validación.<br>- El Administrador revisa la información y la documentación de la empresa registrada.<br>- El Administrador aprueba o rechaza el registro.<br>- El sistema actualiza el estado de la empresa (a "Validada" o "Rechazada") y notifica al Empleador/Empresa. |
+### Diagrama 3.1: Clasificación de Talento
 
+**Descripción Técnica:**
+Ilustra cómo el **Administrador** y la **Bolsa** analizan la base de datos de candidatos.
 
+1.  **Actores:** Administrador, Bolsa.
+2.  **Análisis Individual:** El proceso "Analizar candidato" se extiende (`<<extend>>`) para permitir análisis por:
+      * Competencia, Experiencia, Formación y Ubicación.
+3.  **Segmentación:** El proceso "Clasificar perfiles" permite agrupar el talento por (`<<extend>>`):
+      * Áreas profesionales, Niveles de experiencia y Sectores económicos.
 
 
-## **2. Diagrama de Caso de Uso: Administracion de candidatos**
+![WhatsApp Image 2025-11-26 at 07 21 38](https://github.com/user-attachments/assets/6b27aba3-460e-4a27-ba42-67fd87cf6a92)
 
-![Caso de uso Candidatos](https://github.com/user-attachments/assets/1480a3ad-94cd-4341-a51e-706e322f6ce6)
+### Diagrama 3.2: Clasificación de Ofertas
 
+**Descripción Técnica:**
+Similar al anterior, pero enfocado en la demanda laboral.
 
-**Especificación (Ingresar datos del postulante)**
+1.  **Actores:** Administrador, Bolsa.
+2.  **Análisis de Requerimientos:** "Analizar perfiles requeridos" desglosa la demanda por (`<<extend>>`):
+      * Competencias, Experiencia, Formación y Ubicación.
+3.  **Segmentación de Mercado:** "Clasificar ofertas" permite al sistema organizar las vacantes por (`<<extend>>`):
+      * Tipo de empleo, Industria y Nivel jerárquico, facilitando la búsqueda en la **Bolsa**.
 
-| Nombre | Ingresar datos del postulante |
-| :--- | :--- |
-| **Actores** | - Candidato |
-| **Flujo normal** | - El Candidato inicia el proceso de registro de su perfil.<br>- El sistema solicita la información en secciones.<br>- **`<<include>>`** El Candidato completa el formulario de "Ingresar información personal" (nombres, cédula, contacto).<br>- **`<<include>>`** El Candidato completa el formulario de "Ingresar información profesional" (experiencia, estudios, habilidades, competencias).<br>- El Candidato guarda la información de su perfil.<br>- El sistema almacena el perfil y lo marca como "Pendiente de Validación". |
+![WhatsApp Image 2025-11-26 at 07 21 38 (1)](https://github.com/user-attachments/assets/6f8ab1d3-2fd6-431b-b89f-701994699f73)
 
-**Especificación (Validar candidatos)**
+### Diagrama 3.3: Administración de Catálogo de Ofertas
 
-| Nombre | Validar candidatos |
-| :--- | :--- |
-| **Actores** | - Administrador del sistema |
-| **Flujo normal** | - El Administrador del sistema accede al listado de candidatos pendientes de validación.<br>- El Administrador revisa la información clave del perfil (ej. cédula, certificados).<br>- El Administrador aprueba o rechaza el perfil del candidato.<br>- El sistema actualiza el estado del perfil (a "Validado" o "Rechazado") y notifica al Candidato. |
+**Descripción Técnica:**
+Define las herramientas de notificación y métricas del sistema.
 
+1.  **Actores:** Administrador, Candidato, Bolsa.
+2.  **Sistema de Recomendación:** "Recomendar ofertas" y "Notificar nuevas ofertas" utilizan extensiones (`<<extend>>`) para enviar alertas personalizadas por **Perfil profesional** o **Sector** al **Candidato**.
+3.  **Analítica de Mercado:** El **Administrador** utiliza "Monitorear la demanda" (extendido por sector/ubicación).
+4.  **KPIs:** El proceso "Mantener indicadores" genera métricas de vacantes cubiertas vs. activas (`<<extend>>`).
+![WhatsApp Image 2025-11-26 at 07 21 40](https://github.com/user-attachments/assets/e8208938-00a3-4ef6-adcc-1b549c75d583)
 
+-----
 
+## 4\. MÓDULO GESTIÓN DE POSTULACIONES
 
+Detalla la interacción directa entre el candidato y la oferta, y la gestión de los aplicantes.
 
+### Diagrama 4.1: Postulación a Oferta
 
-## **3. Diagrama de Caso de Uso: Definicioon de vacantes**
+**Descripción Técnica:**
+El flujo crítico donde se concreta la aplicación.
 
+1.  **Actores:** Candidato, Postulación, Bolsa.
+2.  **Aplicación:** El **Candidato** inicia "Postular a oferta".
+3.  **Requisitos (`<<include>>` / `<<extend>>`):**
+      * Es obligatorio (`<<include>>`) "Ingresar CV".
+      * Es opcional (`<<extend>>`) "Ingresar carta de presentación".
+4.  **Seguimiento:** El sistema permite "Ver estado de postulación", el cual incluye "Notificación de Cambios" (`<<include>>`) por parte de la **Bolsa**.
+![WhatsApp Image 2025-11-26 at 07 22 46](https://github.com/user-attachments/assets/a0c5e915-e4ee-4474-b335-1dae40c09aa1)
 
-![Caso de uso Vacantes](https://github.com/user-attachments/assets/4832b462-8585-4561-ab92-de4fdfb8332d)
+### Diagrama 4.2: Administrar Postulaciones
 
-### **Módulo: Gestión de Ofertas Laborales (Definición de Vacantes)**
+**Descripción Técnica:**
+Herramientas para que el **Candidato** o la **Bolsa** gestionen las aplicaciones realizadas.
 
-**Especificación (Registrar oferta laboral)**
+1.  **Actores:** Candidato, Bolsa.
+2.  **Gestión:** El actor accede a "Administrar postulaciones" y "Filtrar postulaciones".
+3.  **Búsqueda y Filtrado:** El sistema permite filtrar las postulaciones mediante criterios como "Filtrar por fecha" o "Buscar postulación" (`<<extend>>`).
+![WhatsApp Image 2025-11-26 at 07 22 46 (1)](https://github.com/user-attachments/assets/f7a5e303-2f08-414a-9e1c-016077ff79f3)
 
-| Nombre | Registrar oferta laboral |
-| :--- | :--- |
-| **Actores** | - Empleador/Empresa |
-| **Flujo normal** | - El Empleador/Empresa selecciona la opción de crear una nueva oferta laboral.<br>- **`<<include>>`** El Empleador/Empresa completa el formulario de "Ingresar datos de oferta laboral" (título, descripción, salario, modalidad, ubicación, etc.).<br>- El Empleador/Empresa guarda la oferta como borrador. |
+### Diagrama 4.3: Aceptación de Postulante
 
-**Especificación (Registrar perfiles requeridos)**
+**Descripción Técnica:**
+Cubre la etapa final del proceso de selección por parte del **Usuario** (Empresa).
 
-| Nombre | Registrar perfiles requeridos |
-| :--- | :--- |
-| **Actores** | - Empleador/Empresa |
-| **Flujo normal** | - El Empleador/Empresa, durante la creación o edición de una oferta, accede a la sección de requisitos.<br>- El Empleador/Empresa especifica las competencias, nivel de experiencia y formación necesarios para la vacante.<br>- El sistema guarda estos requisitos asociados a la oferta laboral. |
-
-**Especificación (Publicar oferta laboral)**
-
-| Nombre | Publicar oferta laboral |
-| :--- | :--- |
-| **Actores** | - Empleador/Empresa |
-| **Flujo normal** | - El Empleador/Empresa accede a su lista de ofertas en borrador.<br>- El Empleador/Empresa selecciona una oferta para hacerla pública.<br>- El sistema valida que la oferta tenga los datos mínimos (datos de oferta y perfiles requeridos).<br>- El sistema cambia el estado de la oferta a "Publicada" y la hace visible en el catálogo. |
-
-
-
-## **4. Diagrama de Caso de Uso: Ciclo de vida Oferta**
-
-
-![Caso de uso Ciclo Oferta](https://github.com/user-attachments/assets/fe87a559-4855-46af-87f9-2552a3cc9657)
-
-
-### **Módulo: Gestión de Ofertas Laborales (Gestión del ciclo de vida de la oferta)**
-
-**Especificación (Administrar oferta)**
-
-| Nombre | Administrar oferta |
-| :--- | :--- |
-| **Actores** | - Empleador/Empresa |
-| **Flujo normal** | - El Empleador/Empresa accede a su panel de "Ofertas publicadas".<br>- El Empleador/Empresa selecciona una oferta activa para gestionarla.<br>- **`<<include>>`** El Empleador "Verifica la oferta" (revisa su estado, vistas, número de postulantes).<br>- **`<<include>>`** El Empleador "Actualiza la oferta" (modifica la descripción, salario, o cualquier dato si es necesario).<br>- El sistema guarda los cambios realizados. |
-
-**Especificación (Administrar ofertas finalizadas)**
-
-| Nombre | Administrar ofertas finalizadas |
-| :--- | :--- |
-| **Actores** | - Empleador/Empresa |
-| **Flujo normal** | - El Empleador/Empresa determina que una oferta ya no está vigente (ej. vacante cubierta o expirada).<br>- El Empleador/Empresa selecciona la oferta desde su panel.<br>- **`<<include>>`** El Empleador "Archiva la oferta" (la mueve a un historial de registros).<br>- **`<<include>>`** El Empleador "Retira la oferta" (la quita de la vista pública de candidatos).<Lbr>- El sistema actualiza el estado de la oferta a "Finalizada" o "Archivada". |
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+1.  **Actores:** Usuario, Bolsa.
+2.  **Evaluación:** Se inicia con "Evaluar postulación", que incluye obligatoriamente (`<<includes>>`) el proceso de "Evaluar Perfil".
+3.  **Decisión:** El sistema ofrece dos caminos extendidos (`<<extends>>`) basados en el resultado de la evaluación:
+      * "Seleccionar postulante": Marca al candidato como elegido.
+      * "Rechazar postulante": Descarta la aplicación.
+![WhatsApp Image 2025-11-26 at 07 22 46 (2)](https://github.com/user-attachments/assets/47c7643c-603f-488b-9d51-23b68bf14e0d)
 

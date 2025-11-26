@@ -209,7 +209,7 @@ function getCategoryIcon(category?: string): keyof typeof Feather.glyphMap {
     case 'Proceso':
       return 'activity';
     case 'Sugerencia':
-      return 'lightbulb';
+      return 'zap';
     case 'Alerta':
       return 'alert-circle';
     case 'Sistema':

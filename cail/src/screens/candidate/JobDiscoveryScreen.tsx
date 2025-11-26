@@ -114,14 +114,14 @@ export function JobDiscoveryScreen() {
       </View>
 
       <View style={styles.tagList}>
-        <Chip label={item.employmentType} size="sm" />
+        <Chip label={item.employmentType} />
         {item.requiredCompetencies.slice(0, 3).map((competency) => (
-          <Chip key={competency} label={competency} size="sm" />
+          <Chip key={competency} label={competency} />
         ))}
       </View>
 
       <View style={styles.requirementsList}>
-        <RequirementItem icon="graduation-cap" text={item.requiredEducation} />
+        <RequirementItem icon="award" text={item.requiredEducation} />
         <RequirementItem icon="trending-up" text={item.requiredExperience} />
       </View>
 
@@ -131,7 +131,7 @@ export function JobDiscoveryScreen() {
         style={styles.applyButton}
       />
       
-      <Text style={styles.publishDate}>Publicado: {item.publishedDate || '24/10/2025'}</Text>
+      <Text style={styles.publishDate}>Publicado: {item.postedDate || '24/10/2025'}</Text>
     </Card>
   );
 

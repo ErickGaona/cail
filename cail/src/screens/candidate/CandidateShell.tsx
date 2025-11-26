@@ -10,7 +10,7 @@ import { MyApplicationsScreen } from './MyApplicationsScreen';
 import { NotificationsScreen } from './NotificationsScreen';
 import { CandidateUserData } from '@/types';
 
-const logo = require('@/assets/0198b872f16fe45d3593d066ae15f05331a33cf2.png');
+const logo = require('@/assets/logo.png');
 
 type CandidateTab = 'discovery' | 'applications' | 'notifications' | 'profile';
 
@@ -22,9 +22,6 @@ interface CandidateShellProps {
 export function CandidateShell({ userData, onLogout }: CandidateShellProps) {
   const [tab, setTab] = useState<CandidateTab>('discovery');
   const { contentWidth, horizontalGutter } = useResponsiveLayout();
-
-  // Simulación de notificaciones no leídas
-  const unreadNotifications = 3;
 
   const renderScreen = () => {
     switch (tab) {
@@ -95,7 +92,6 @@ export function CandidateShell({ userData, onLogout }: CandidateShellProps) {
           <NavItem
             icon="bell"
             label="Alertas"
-            badge={unreadNotifications}
             active={tab === 'notifications'}
             onPress={() => setTab('notifications')}
           />

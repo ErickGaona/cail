@@ -10,6 +10,8 @@
 
 ---
 
+
+
 ## **¿Qué es un Diagrama de Casos de Uso?**
 
 Un **Diagrama de Casos de Uso** es una herramienta fundamental del Lenguaje Unificado de Modelado (UML) que se utiliza para describir gráficamente las **funcionalidades de un sistema** desde la perspectiva del usuario. Representa las interacciones entre los **"actores"** (usuarios o sistemas externos) y el **"sistema"** para alcanzar un objetivo específico.
@@ -63,12 +65,11 @@ Basado en el Mapa de Capacidades, se identifican los siguientes actores y casos 
 
 ---
 
-## **1. Diagrama de Caso de Uso: Administracion de perfiles**
+## **1. Diagrama de Caso de Uso: Gestión de Postulaciones**
 
-Este diagrama cubre la administración de los actores clave del sistema: los empleadores y los candidatos.
+Este diagrama cubre la administración de los actores clave del sistema.
 
-
-![Caso de uso Perfiles](https://github.com/user-attachments/assets/db28aadb-bd4e-4970-a7ae-14ff7b1ed72f)
+<img width="1242" height="1068" alt="Casos_USO_CAIL (1)" src="https://github.com/user-attachments/assets/eb61c4ea-2b03-4309-8b72-f47c32023fd3" />
 
 
 ### **Módulo: Gestión de perfiles (Administración de empleadores)**
@@ -165,6 +166,7 @@ Este diagrama cubre la administración de los actores clave del sistema: los emp
 | :--- | :--- |
 | **Actores** | - Empleador/Empresa |
 | **Flujo normal** | - El Empleador/Empresa determina que una oferta ya no está vigente (ej. vacante cubierta o expirada).<br>- El Empleador/Empresa selecciona la oferta desde su panel.<br>- **`<<include>>`** El Empleador "Archiva la oferta" (la mueve a un historial de registros).<br>- **`<<include>>`** El Empleador "Retira la oferta" (la quita de la vista pública de candidatos).<Lbr>- El sistema actualiza el estado de la oferta a "Finalizada" o "Archivada". |
+
 
 
 

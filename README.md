@@ -87,12 +87,18 @@ Una aplicación **web** y **móvil nativa**, con **soporte en la nube**, desarro
 - Fortalecer la transformación digital del sector industrial.  
 - Contribuir al desarrollo económico local mediante una gestión moderna y **eficiente** del talento humano.
 
-### Prototipo Figma
-<p align="center">
-  <img width="300" height="300" alt="IHK2Ge" src="https://github.com/user-attachments/assets/99fe8ffa-6eec-488c-9526-98254657c3e7" />
-  <br>
-  <a href="https://miter-berry-29304449.figma.site/" target="_blank"><img src="https://img.shields.io/badge/Figma-Ver%20prototipo-ff7262?logo=figma&logoColor=white" alt="Prototipo Figma"></a>
-</p>
+<div align="center">
+<table>
+  <tr>
+    <td align="center" style="padding: 20px; border: 1px solid #ddd;">
+      <strong>Frontend Desplegado</strong><br><br>
+      <img width="300" height="300" alt="cail" src="https://github.com/user-attachments/assets/bdaa440f-21ef-45f9-bb94-ac6a95586ff1" />
+      <br>
+      </a>
+    </td>
+  </tr>
+</table>
+</div>
 
 ---
 

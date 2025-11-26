@@ -25,6 +25,8 @@ export function RegisterCandidateForm({ onSuccess, onBack, onSwitchToLogin }: Re
   const [city, setCity] = useState('Loja');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   // Información Profesional
   const [professionalSummary, setProfessionalSummary] = useState('');
@@ -48,7 +50,6 @@ export function RegisterCandidateForm({ onSuccess, onBack, onSwitchToLogin }: Re
         Alert.alert('Error', 'Las contraseñas no coinciden.');
         return;
       }
-      // Cambiar a tab profesional
       setActiveTab('profesional');
       return;
     }
@@ -86,28 +87,34 @@ export function RegisterCandidateForm({ onSuccess, onBack, onSwitchToLogin }: Re
 
   return (
     <View style={styles.container}>
-      {/* Header con botón volver y logo */}
-      <View style={styles.topBar}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Feather name="chevron-left" size={20} color="#0F8154" />
-          <Text style={styles.backText}>Volver</Text>
-        </TouchableOpacity>
-        <View style={styles.logoSmall}>
-          <Text style={styles.logoText}>CAIL</Text>
-        </View>
-      </View>
-
-      {/* Card de registro */}
+      {/* Main Card */}
       <View style={styles.card}>
-        {/* Header del card */}
+        {/* Header + Progress */}
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={onBack} style={styles.backButton}>
+            <Feather name="arrow-left" size={20} color="#0B7A4D" />
+          </TouchableOpacity>
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: activeTab === 'personal' ? '50%' : '100%' }]} />
+            </View>
+            <Text style={styles.progressText}>
+              Paso {activeTab === 'personal' ? '1' : '2'} de 2
+            </Text>
+          </View>
+        </View>
+
+        {/* Card Header */}
         <View style={styles.cardHeader}>
           <View style={styles.iconCircle}>
-            <View style={styles.iconDot} />
+            <View style={styles.iconInner}>
+              <Feather name="user-plus" size={24} color="#FFFFFF" />
+            </View>
           </View>
           <View style={styles.headerText}>
-            <Text style={styles.title}>Registrarme como Candidato</Text>
+            <Text style={styles.title}>Crear cuenta</Text>
             <Text style={styles.subtitle}>
-              Administración de Candidatos - Ingresar datos de candidatos
+              {activeTab === 'personal' ? 'Información personal' : 'Información profesional'}
             </Text>
           </View>
         </View>
@@ -118,6 +125,11 @@ export function RegisterCandidateForm({ onSuccess, onBack, onSwitchToLogin }: Re
             style={[styles.tab, activeTab === 'personal' && styles.tabActive]}
             onPress={() => setActiveTab('personal')}
           >
+            <Feather 
+              name="user" 
+              size={16} 
+              color={activeTab === 'personal' ? '#0B7A4D' : '#9CA3AF'} 
+            />
             <Text style={[styles.tabText, activeTab === 'personal' && styles.tabTextActive]}>
               Personal
             </Text>
@@ -126,305 +138,367 @@ export function RegisterCandidateForm({ onSuccess, onBack, onSwitchToLogin }: Re
             style={[styles.tab, activeTab === 'profesional' && styles.tabActive]}
             onPress={() => setActiveTab('profesional')}
           >
+            <Feather 
+              name="briefcase" 
+              size={16} 
+              color={activeTab === 'profesional' ? '#0B7A4D' : '#9CA3AF'} 
+            />
             <Text style={[styles.tabText, activeTab === 'profesional' && styles.tabTextActive]}>
               Profesional
             </Text>
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
+        {/* Form Content */}
+        <ScrollView 
+          style={styles.formScroll} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.formContent}
+        >
           {activeTab === 'personal' ? (
             <View style={styles.form}>
-              {/* INFORMACIÓN PERSONAL */}
-              <Text style={styles.sectionTitle}>INFORMACIÓN PERSONAL</Text>
-              
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Nombre Completo *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={fullName}
-                  onChangeText={setFullName}
-                  placeholder="Nombre y apellidos"
-                  placeholderTextColor="#9CA3AF"
-                />
-              </View>
+              {/* Datos Básicos */}
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Feather name="file-text" size={16} color="#0B7A4D" />
+                  <Text style={styles.sectionTitle}>Datos básicos</Text>
+                </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Cédula Ecuatoriana *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={cedula}
-                  onChangeText={setCedula}
-                  placeholder="0000000000"
-                  keyboardType="numeric"
-                  maxLength={10}
-                  placeholderTextColor="#9CA3AF"
-                />
-                <Text style={styles.hint}>10 dígitos - Validación automática</Text>
-              </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Nombre completo *</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={fullName}
+                    onChangeText={setFullName}
+                    placeholder="Ej: María Fernanda Calle"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
 
-              <View style={styles.row}>
-                <View style={[styles.inputGroup, styles.flex1]}>
-                  <Text style={styles.label}>Fecha de Nacimiento</Text>
+                <View style={styles.row}>
+                  <View style={[styles.inputGroup, styles.flex1]}>
+                    <Text style={styles.label}>Cédula *</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={cedula}
+                      onChangeText={setCedula}
+                      placeholder="0000000000"
+                      keyboardType="numeric"
+                      maxLength={10}
+                      placeholderTextColor="#9CA3AF"
+                    />
+                  </View>
+                  <View style={[styles.inputGroup, styles.flex1]}>
+                    <Text style={styles.label}>Teléfono *</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={phone}
+                      onChangeText={setPhone}
+                      placeholder="0999999999"
+                      keyboardType="phone-pad"
+                      placeholderTextColor="#9CA3AF"
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Fecha de nacimiento</Text>
                   <TextInput
                     style={styles.input}
                     value={birthDate}
                     onChangeText={setBirthDate}
-                    placeholder="dd/mm/aaaa"
+                    placeholder="DD/MM/AAAA"
                     placeholderTextColor="#9CA3AF"
                   />
                 </View>
-                <View style={[styles.inputGroup, styles.flex1]}>
-                  <Text style={styles.label}>Teléfono *</Text>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Correo electrónico *</Text>
                   <TextInput
                     style={styles.input}
-                    value={phone}
-                    onChangeText={setPhone}
-                    placeholder="0999999999"
-                    keyboardType="phone-pad"
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholder="tu@email.com"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
                     placeholderTextColor="#9CA3AF"
                   />
                 </View>
               </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="tu@email.com"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  placeholderTextColor="#9CA3AF"
-                />
+              {/* Ubicación */}
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Feather name="map-pin" size={16} color="#3B82F6" />
+                  <Text style={styles.sectionTitle}>Ubicación</Text>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Dirección</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={address}
+                    onChangeText={setAddress}
+                    placeholder="Calle, número, barrio"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Ciudad *</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={city}
+                    onChangeText={setCity}
+                    placeholder="Loja"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
               </View>
 
-              {/* UBICACIÓN */}
-              <Text style={styles.sectionTitle}>UBICACIÓN</Text>
-              
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Dirección</Text>
-                <TextInput
-                  style={styles.input}
-                  value={address}
-                  onChangeText={setAddress}
-                  placeholder="Tu dirección"
-                  placeholderTextColor="#9CA3AF"
-                />
-              </View>
+              {/* Seguridad */}
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Feather name="lock" size={16} color="#EF4444" />
+                  <Text style={styles.sectionTitle}>Seguridad</Text>
+                </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Ciudad *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={city}
-                  onChangeText={setCity}
-                  placeholder="Loja"
-                  placeholderTextColor="#9CA3AF"
-                />
-              </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Contraseña *</Text>
+                  <View style={styles.passwordContainer}>
+                    <TextInput
+                      style={styles.passwordInput}
+                      value={password}
+                      onChangeText={setPassword}
+                      placeholder="Mínimo 6 caracteres"
+                      secureTextEntry={!showPassword}
+                      placeholderTextColor="#9CA3AF"
+                    />
+                    <TouchableOpacity 
+                      onPress={() => setShowPassword(!showPassword)}
+                      style={styles.passwordToggle}
+                    >
+                      <Feather 
+                        name={showPassword ? 'eye-off' : 'eye'} 
+                        size={18} 
+                        color="#9CA3AF" 
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
 
-              {/* CREAR CONTRASEÑA */}
-              <Text style={styles.sectionTitle}>CREAR CONTRASEÑA</Text>
-              
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Contraseña *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="Mínimo 6 caracteres"
-                  secureTextEntry
-                  placeholderTextColor="#9CA3AF"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Confirmar Contraseña *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  placeholder="Repite tu contraseña"
-                  secureTextEntry
-                  placeholderTextColor="#9CA3AF"
-                />
-              </View>
-
-              <View style={styles.infoBox}>
-                <Text style={styles.infoText}>
-                  <Text style={styles.infoBold}>Proceso de Validación:</Text>
-                  {'\n'}Tu perfil será revisado y validado por CAIL. Podrás postular a ofertas una vez validado tu perfil.
-                </Text>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Confirmar contraseña *</Text>
+                  <View style={styles.passwordContainer}>
+                    <TextInput
+                      style={styles.passwordInput}
+                      value={confirmPassword}
+                      onChangeText={setConfirmPassword}
+                      placeholder="Repite tu contraseña"
+                      secureTextEntry={!showConfirmPassword}
+                      placeholderTextColor="#9CA3AF"
+                    />
+                    <TouchableOpacity 
+                      onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                      style={styles.passwordToggle}
+                    >
+                      <Feather 
+                        name={showConfirmPassword ? 'eye-off' : 'eye'} 
+                        size={18} 
+                        color="#9CA3AF" 
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
             </View>
           ) : (
             <View style={styles.form}>
-              {/* INFORMACIÓN PROFESIONAL */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Resumen Profesional</Text>
-                <TextInput
-                  style={[styles.input, styles.textArea]}
-                  value={professionalSummary}
-                  onChangeText={setProfessionalSummary}
-                  placeholder="Describe brevemente tu perfil profesional..."
-                  multiline
-                  numberOfLines={4}
-                  placeholderTextColor="#9CA3AF"
-                />
+              {/* Perfil Profesional */}
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Feather name="file-text" size={16} color="#0B7A4D" />
+                  <Text style={styles.sectionTitle}>Perfil profesional</Text>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Resumen profesional</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    value={professionalSummary}
+                    onChangeText={setProfessionalSummary}
+                    placeholder="Describe brevemente tu perfil y objetivos profesionales..."
+                    multiline
+                    numberOfLines={4}
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
               </View>
 
-              {/* HABILIDADES TÉCNICAS */}
-              <Text style={styles.sectionTitle}>HABILIDADES TÉCNICAS</Text>
-              <Text style={styles.sectionHint}>Tecnologías, software, herramientas que dominas</Text>
-              
-              <View style={styles.skillInput}>
-                <TextInput
-                  style={[styles.input, styles.flex1]}
-                  value={newSkill}
-                  onChangeText={setNewSkill}
-                  placeholder="Ej: Python, Excel, AutoCAD..."
-                  placeholderTextColor="#9CA3AF"
-                />
-                <TouchableOpacity style={styles.addButton} onPress={addSkill}>
-                  <Feather name="plus" size={20} color="#fff" />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.chipContainer}>
-                {technicalSkills.map((skill, index) => (
-                  <View key={index} style={styles.chip}>
-                    <Text style={styles.chipText}>{skill}</Text>
-                    <TouchableOpacity onPress={() => removeSkill(index)}>
-                      <Feather name="x" size={16} color="#6B7280" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </View>
-
-              {/* FORMACIÓN */}
-              <Text style={styles.sectionTitle}>FORMACIÓN</Text>
-              
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Nivel de Educación</Text>
-                <TextInput
-                  style={styles.input}
-                  value={educationLevel}
-                  onChangeText={setEducationLevel}
-                  placeholder="Bachiller, Tecnólogo, Universitario, Postgrado"
-                  placeholderTextColor="#9CA3AF"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Título / Carrera</Text>
-                <TextInput
-                  style={styles.input}
-                  value={degree}
-                  onChangeText={setDegree}
-                  placeholder="Ej: Ingeniería en Sistemas"
-                  placeholderTextColor="#9CA3AF"
-                />
-              </View>
-
-              {/* HABILIDADES BLANDAS */}
-              <Text style={styles.sectionTitle}>HABILIDADES BLANDAS</Text>
-              <Text style={styles.sectionHint}>Cualidades personales y sociales</Text>
-              
-              <View style={styles.inputGroup}>
-                <TextInput
-                  style={[styles.input, styles.textArea]}
-                  value={softSkills}
-                  onChangeText={setSoftSkills}
-                  placeholder="Ej: Trabajo en equipo, liderazgo, comunicación efectiva..."
-                  multiline
-                  numberOfLines={3}
-                  placeholderTextColor="#9CA3AF"
-                />
-              </View>
-
-              {/* COMPETENCIAS */}
-              <Text style={styles.sectionTitle}>COMPETENCIAS</Text>
-              <Text style={styles.sectionHint}>Capacidades profesionales específicas</Text>
-              
-              <View style={styles.skillInput}>
-                <TextInput
-                  style={[styles.input, styles.flex1]}
-                  value={newCompetency}
-                  onChangeText={setNewCompetency}
-                  placeholder="Ej: Gestión de proyectos, Negociación..."
-                  placeholderTextColor="#9CA3AF"
-                />
-                <TouchableOpacity style={styles.addButton} onPress={addCompetency}>
-                  <Feather name="plus" size={20} color="#fff" />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.chipContainer}>
-                {competencies.map((comp, index) => (
-                  <View key={index} style={styles.chip}>
-                    <Text style={styles.chipText}>{comp}</Text>
-                    <TouchableOpacity onPress={() => removeCompetency(index)}>
-                      <Feather name="x" size={16} color="#6B7280" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </View>
-
-              {/* EXPERIENCIA */}
-              <Text style={styles.sectionTitle}>EXPERIENCIA</Text>
-              
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Años de Experiencia</Text>
-                <TextInput
-                  style={styles.input}
-                  value={yearsExperience}
-                  onChangeText={setYearsExperience}
-                  placeholder="Ej: 3 años, 5+ años..."
-                  placeholderTextColor="#9CA3AF"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Resumen de Experiencia</Text>
-                <TextInput
-                  style={[styles.input, styles.textArea]}
-                  value={experienceSummary}
-                  onChangeText={setExperienceSummary}
-                  placeholder="Describe brevemente tu experiencia laboral..."
-                  multiline
-                  numberOfLines={4}
-                  placeholderTextColor="#9CA3AF"
-                />
-              </View>
-
-              <View style={styles.infoBox}>
-                <Text style={styles.infoText}>
-                  <Text style={styles.infoBold}>Proceso de Validación:</Text>
-                  {'\n'}Tu perfil será revisado y validado por CAIL. Podrás postular a ofertas una vez validado tu perfil.
+              {/* Habilidades Técnicas */}
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Feather name="code" size={16} color="#3B82F6" />
+                  <Text style={styles.sectionTitle}>Habilidades técnicas</Text>
+                </View>
+                <Text style={styles.sectionHint}>
+                  Tecnologías, herramientas y software que dominas
                 </Text>
+
+                <View style={styles.skillInput}>
+                  <TextInput
+                    style={[styles.input, styles.flex1]}
+                    value={newSkill}
+                    onChangeText={setNewSkill}
+                    placeholder="Ej: Excel, Python, AutoCAD..."
+                    placeholderTextColor="#9CA3AF"
+                  />
+                  <TouchableOpacity style={styles.addButton} onPress={addSkill}>
+                    <Feather name="plus" size={20} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+
+                {technicalSkills.length > 0 && (
+                  <View style={styles.chipContainer}>
+                    {technicalSkills.map((skill, index) => (
+                      <View key={index} style={styles.chipBlue}>
+                        <Text style={styles.chipTextBlue}>{skill}</Text>
+                        <TouchableOpacity onPress={() => removeSkill(index)}>
+                          <Feather name="x" size={14} color="#3B82F6" />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+
+              {/* Formación */}
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Feather name="book-open" size={16} color="#8B5CF6" />
+                  <Text style={styles.sectionTitle}>Formación académica</Text>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Nivel de educación</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={educationLevel}
+                    onChangeText={setEducationLevel}
+                    placeholder="Bachiller, Tecnólogo, Universitario, Postgrado"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Título o carrera</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={degree}
+                    onChangeText={setDegree}
+                    placeholder="Ej: Ingeniería en Sistemas"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
+              </View>
+
+              {/* Competencias */}
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Feather name="star" size={16} color="#F59E0B" />
+                  <Text style={styles.sectionTitle}>Competencias clave</Text>
+                </View>
+
+                <View style={styles.skillInput}>
+                  <TextInput
+                    style={[styles.input, styles.flex1]}
+                    value={newCompetency}
+                    onChangeText={setNewCompetency}
+                    placeholder="Ej: Gestión de proyectos, Negociación..."
+                    placeholderTextColor="#9CA3AF"
+                  />
+                  <TouchableOpacity style={[styles.addButton, styles.addButtonYellow]} onPress={addCompetency}>
+                    <Feather name="plus" size={20} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+
+                {competencies.length > 0 && (
+                  <View style={styles.chipContainer}>
+                    {competencies.map((comp, index) => (
+                      <View key={index} style={styles.chipYellow}>
+                        <Text style={styles.chipTextYellow}>{comp}</Text>
+                        <TouchableOpacity onPress={() => removeCompetency(index)}>
+                          <Feather name="x" size={14} color="#F59E0B" />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+
+              {/* Experiencia */}
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Feather name="briefcase" size={16} color="#10B981" />
+                  <Text style={styles.sectionTitle}>Experiencia laboral</Text>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Años de experiencia</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={yearsExperience}
+                    onChangeText={setYearsExperience}
+                    placeholder="Ej: 3 años, 5+ años, Sin experiencia"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Resumen de experiencia</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    value={experienceSummary}
+                    onChangeText={setExperienceSummary}
+                    placeholder="Describe brevemente tu experiencia laboral relevante..."
+                    multiline
+                    numberOfLines={4}
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
               </View>
             </View>
           )}
+
+          {/* Info Box */}
+          <View style={styles.infoBox}>
+            <Feather name="shield" size={16} color="#3B82F6" />
+            <Text style={styles.infoText}>
+              <Text style={styles.infoBold}>Proceso de validación: </Text>
+              Tu perfil será revisado por CAIL. Podrás postular a ofertas una vez validado.
+            </Text>
+          </View>
         </ScrollView>
 
-        {/* Botón de acción */}
-        <TouchableOpacity 
-          onPress={handleSubmit}
-          style={styles.submitButton}
-        >
-          <Text style={styles.submitText}>
-            {activeTab === 'personal' ? 'Continuar' : 'Registrar Perfil'}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Link de login */}
-        <View style={styles.loginRow}>
-          <Text style={styles.loginText}>¿Ya tienes cuenta? </Text>
-          <TouchableOpacity onPress={onSwitchToLogin}>
-            <Text style={styles.loginLink}>Inicia sesión aquí</Text>
+        {/* Action Buttons */}
+        <View style={styles.actions}>
+          <TouchableOpacity 
+            onPress={handleSubmit}
+            style={styles.submitButton}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.submitText}>
+              {activeTab === 'personal' ? 'Continuar' : 'Crear cuenta'}
+            </Text>
+            <Feather name="arrow-right" size={20} color="#FFFFFF" />
           </TouchableOpacity>
+
+          <View style={styles.loginRow}>
+            <Text style={styles.loginText}>¿Ya tienes cuenta? </Text>
+            <TouchableOpacity onPress={onSwitchToLogin}>
+              <Text style={styles.loginLink}>Inicia sesión</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </View>
@@ -433,230 +507,323 @@ export function RegisterCandidateForm({ onSuccess, onBack, onSwitchToLogin }: Re
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    gap: 16,
   },
-  topBar: {
+
+  // Header inside card
+  headerRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 12,
     marginBottom: 16,
   },
   backButton: {
-    flexDirection: 'row',
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
-    gap: 4,
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
-  backText: {
-    color: '#0F8154',
-    fontSize: 16,
-    fontWeight: '500',
+  progressContainer: {
+    flex: 1,
+    gap: 6,
   },
-  logoSmall: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+  progressBar: {
+    height: 6,
+    backgroundColor: '#E6F4EC',
+    borderRadius: 3,
+    overflow: 'hidden',
   },
-  logoText: {
-    color: '#0F8154',
-    fontWeight: '700',
-    fontSize: 14,
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#0B7A4D',
+    borderRadius: 3,
   },
+  progressText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#0B7A4D',
+  },
+
+  // Card
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    padding: 20,
-    maxHeight: '85%',
+    paddingVertical: 26,
+    paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 5,
   },
   cardHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 16,
+    alignItems: 'center',
     gap: 12,
+    marginBottom: 16,
   },
   iconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#0F8154',
-    justifyContent: 'center',
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: '#ECFDF5',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  iconDot: {
-    width: 20,
-    height: 20,
+  iconInner: {
+    width: 40,
+    height: 40,
     borderRadius: 10,
-    backgroundColor: '#fff',
+    backgroundColor: '#0B7A4D',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerText: {
     flex: 1,
   },
   title: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: '700',
     color: '#1F2937',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   subtitle: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    lineHeight: 16,
+    fontSize: 13,
+    color: '#6B7280',
   },
+
+  // Tabs
   tabs: {
     flexDirection: 'row',
     backgroundColor: '#F3F4F6',
     borderRadius: 12,
     padding: 4,
     marginBottom: 16,
+    gap: 4,
   },
   tab: {
     flex: 1,
-    paddingVertical: 10,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
     borderRadius: 8,
   },
   tabActive: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 2,
-    elevation: 2,
+    elevation: 1,
   },
   tabText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6B7280',
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#9CA3AF',
   },
   tabTextActive: {
-    color: '#1F2937',
-    fontWeight: '600',
+    color: '#0B7A4D',
   },
+
+  // Form
   formScroll: {
-    maxHeight: 400,
+    maxHeight: 380,
+  },
+  formContent: {
+    paddingBottom: 8,
   },
   form: {
+    gap: 20,
+  },
+  section: {
     gap: 12,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   sectionTitle: {
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: '700',
-    color: '#9CA3AF',
-    letterSpacing: 0.5,
-    marginTop: 8,
-    marginBottom: 4,
+    color: '#374151',
   },
   sectionHint: {
-    fontSize: 11,
-    color: '#9CA3AF',
-    marginBottom: 8,
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: -8,
   },
   inputGroup: {
-    marginBottom: 12,
+    gap: 6,
   },
   label: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#374151',
-    marginBottom: 6,
   },
   input: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 14,
     color: '#1F2937',
-    borderWidth: 0,
   },
   textArea: {
-    height: 80,
+    height: 90,
     textAlignVertical: 'top',
     paddingTop: 12,
   },
-  hint: {
-    fontSize: 11,
-    color: '#9CA3AF',
-    marginTop: 4,
-  },
   row: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
   },
   flex1: {
     flex: 1,
   },
+
+  // Password
+  passwordContainer: {
+    position: 'relative',
+  },
+  passwordInput: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    paddingRight: 50,
+    fontSize: 14,
+    color: '#1F2937',
+  },
+  passwordToggle: {
+    position: 'absolute',
+    right: 12,
+    top: 12,
+    padding: 8,
+  },
+
+  // Skills
   skillInput: {
     flexDirection: 'row',
     gap: 8,
     alignItems: 'flex-start',
-    marginBottom: 12,
   },
   addButton: {
-    backgroundColor: '#1F2937',
     width: 44,
     height: 44,
-    borderRadius: 8,
-    justifyContent: 'center',
+    borderRadius: 10,
+    backgroundColor: '#3B82F6',
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addButtonYellow: {
+    backgroundColor: '#F59E0B',
   },
   chipContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 12,
   },
-  chip: {
+  chipBlue: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#F3F4F6',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-  },
-  chipText: {
-    fontSize: 13,
-    color: '#374151',
-  },
-  infoBox: {
     backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
     borderRadius: 8,
+  },
+  chipTextBlue: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#3B82F6',
+  },
+  chipYellow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+  },
+  chipTextYellow: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#F59E0B',
+  },
+
+  // Info Box
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: '#EFF6FF',
     padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
     marginTop: 8,
   },
   infoText: {
+    flex: 1,
     fontSize: 12,
     color: '#1E40AF',
     lineHeight: 18,
   },
   infoBold: {
-    fontWeight: '600',
+    fontWeight: '700',
+  },
+
+  // Actions
+  actions: {
+    marginTop: 16,
+    gap: 12,
   },
   submitButton: {
-    backgroundColor: '#0F8154',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#0B7A4D',
     paddingVertical: 14,
     borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   submitText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
   loginRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 16,
   },
   loginText: {
     color: '#6B7280',
     fontSize: 13,
   },
   loginLink: {
-    color: '#0F8154',
+    color: '#0B7A4D',
     fontSize: 13,
     fontWeight: '600',
   },

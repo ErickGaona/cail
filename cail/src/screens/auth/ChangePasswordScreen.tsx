@@ -38,130 +38,164 @@ export function ChangePasswordScreen({ userData, onPasswordChanged, onLogout }: 
   return (
     <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.gradient}>
       <SafeAreaView style={styles.safe}>
-        <ScrollView contentContainerStyle={[styles.container, { paddingHorizontal: horizontalGutter }]}>
-          {/* Header con ícono */}
-          <View style={styles.header}>
-            <View style={styles.iconCircle}>
-              <Feather name="shield" size={40} color="#F59E0B" />
-            </View>
-            <Text style={styles.title}>Cambio de Contraseña Obligatorio</Text>
-            <Text style={styles.subtitle}>
-              Por seguridad, debes cambiar tu contraseña temporal
-            </Text>
-          </View>
-
-          {/* Card con información de empresa */}
+        <ScrollView 
+          contentContainerStyle={[styles.container, { paddingHorizontal: horizontalGutter }]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Main Card */}
           <View style={[styles.card, { maxWidth: contentWidth, alignSelf: 'center' }]}>
-            <View style={styles.companyInfo}>
+            {/* Card Header */}
+            <View style={styles.cardHeader}>
+              <View style={styles.iconCircle}>
+                <View style={styles.iconInner}>
+                  <Feather name="shield" size={24} color="#FFFFFF" />
+                </View>
+              </View>
+              <View style={styles.headerText}>
+                <Text style={styles.title}>Cambio de Contraseña</Text>
+                <Text style={styles.subtitle}>Por seguridad, actualiza tu contraseña</Text>
+              </View>
+            </View>
+
+            {/* Company Info Banner */}
+            <View style={styles.companyBanner}>
               <View style={styles.companyIcon}>
-                <Feather name="briefcase" size={20} color="#F59E0B" />
+                <Feather name="briefcase" size={16} color="#F59E0B" />
               </View>
               <View style={styles.companyDetails}>
-                <Text style={styles.companyLabel}>Empresa: <Text style={styles.companyName}>{userData?.company || 'CAFRILOSA'}</Text></Text>
-                <Text style={styles.contactLabel}>Contacto: <Text style={styles.contactName}>{userData?.contactName || 'María José Espinoza'}</Text></Text>
+                <Text style={styles.companyText}>
+                  <Text style={styles.companyLabel}>Empresa: </Text>
+                  <Text style={styles.companyValue}>{userData?.company || 'CAFRILOSA'}</Text>
+                </Text>
+                <Text style={styles.companyText}>
+                  <Text style={styles.companyLabel}>Contacto: </Text>
+                  <Text style={styles.companyValue}>{userData?.contactName || 'María José Espinoza'}</Text>
+                </Text>
               </View>
             </View>
 
-            {/* Formulario */}
-            <View style={styles.form}>
-              {/* Contraseña Temporal */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Contraseña Temporal *</Text>
-                <View style={styles.passwordInput}>
-                  <TextInput
-                    style={styles.input}
-                    value={tempPassword}
-                    onChangeText={setTempPassword}
-                    placeholder="Contraseña enviada por correo"
-                    placeholderTextColor="#9CA3AF"
-                    secureTextEntry={!showTempPassword}
-                  />
-                  <TouchableOpacity 
-                    onPress={() => setShowTempPassword(!showTempPassword)}
-                    style={styles.eyeButton}
-                  >
-                    <Feather 
-                      name={showTempPassword ? "eye-off" : "eye"} 
-                      size={20} 
-                      color="#6B7280" 
-                    />
-                  </TouchableOpacity>
+            {/* Form Content */}
+            <ScrollView 
+              style={styles.formScroll} 
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.formContent}
+            >
+              <View style={styles.form}>
+                {/* Contraseña Temporal */}
+                <View style={styles.section}>
+                  <View style={styles.sectionHeader}>
+                    <Feather name="key" size={16} color="#EF4444" />
+                    <Text style={styles.sectionTitle}>Contraseña temporal</Text>
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Contraseña temporal *</Text>
+                    <View style={styles.passwordContainer}>
+                      <TextInput
+                        style={styles.passwordInput}
+                        value={tempPassword}
+                        onChangeText={setTempPassword}
+                        placeholder="Ingresa la contraseña enviada por correo"
+                        placeholderTextColor="#9CA3AF"
+                        secureTextEntry={!showTempPassword}
+                      />
+                      <TouchableOpacity 
+                        onPress={() => setShowTempPassword(!showTempPassword)}
+                        style={styles.passwordToggle}
+                      >
+                        <Feather 
+                          name={showTempPassword ? 'eye-off' : 'eye'} 
+                          size={18} 
+                          color="#9CA3AF" 
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Nueva Contraseña */}
+                <View style={styles.section}>
+                  <View style={styles.sectionHeader}>
+                    <Feather name="lock" size={16} color="#0B7A4D" />
+                    <Text style={styles.sectionTitle}>Nueva contraseña</Text>
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Nueva contraseña *</Text>
+                    <View style={styles.passwordContainer}>
+                      <TextInput
+                        style={styles.passwordInput}
+                        value={newPassword}
+                        onChangeText={setNewPassword}
+                        placeholder="Mínimo 6 caracteres"
+                        placeholderTextColor="#9CA3AF"
+                        secureTextEntry={!showNewPassword}
+                      />
+                      <TouchableOpacity 
+                        onPress={() => setShowNewPassword(!showNewPassword)}
+                        style={styles.passwordToggle}
+                      >
+                        <Feather 
+                          name={showNewPassword ? 'eye-off' : 'eye'} 
+                          size={18} 
+                          color="#9CA3AF" 
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Confirmar contraseña *</Text>
+                    <View style={styles.passwordContainer}>
+                      <TextInput
+                        style={styles.passwordInput}
+                        value={confirmPassword}
+                        onChangeText={setConfirmPassword}
+                        placeholder="Repite tu nueva contraseña"
+                        placeholderTextColor="#9CA3AF"
+                        secureTextEntry={!showConfirmPassword}
+                      />
+                      <TouchableOpacity 
+                        onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                        style={styles.passwordToggle}
+                      >
+                        <Feather 
+                          name={showConfirmPassword ? 'eye-off' : 'eye'} 
+                          size={18} 
+                          color="#9CA3AF" 
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Info Box */}
+                <View style={styles.infoBox}>
+                  <Feather name="shield" size={16} color="#3B82F6" />
+                  <Text style={styles.infoText}>
+                    <Text style={styles.infoBold}>Seguridad: </Text>
+                    Tu nueva contraseña debe tener al menos 6 caracteres. Te recomendamos usar una combinación de letras, números y símbolos.
+                  </Text>
                 </View>
               </View>
+            </ScrollView>
 
-              {/* Nueva Contraseña */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Nueva Contraseña *</Text>
-                <View style={styles.passwordInput}>
-                  <TextInput
-                    style={styles.input}
-                    value={newPassword}
-                    onChangeText={setNewPassword}
-                    placeholder="Crea una contraseña segura"
-                    placeholderTextColor="#9CA3AF"
-                    secureTextEntry={!showNewPassword}
-                  />
-                  <TouchableOpacity 
-                    onPress={() => setShowNewPassword(!showNewPassword)}
-                    style={styles.eyeButton}
-                  >
-                    <Feather 
-                      name={showNewPassword ? "eye-off" : "eye"} 
-                      size={20} 
-                      color="#6B7280" 
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Confirmar Nueva Contraseña */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Confirmar Nueva Contraseña *</Text>
-                <View style={styles.passwordInput}>
-                  <TextInput
-                    style={styles.input}
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    placeholder="Repite tu nueva contraseña"
-                    placeholderTextColor="#9CA3AF"
-                    secureTextEntry={!showConfirmPassword}
-                  />
-                  <TouchableOpacity 
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                    style={styles.eyeButton}
-                  >
-                    <Feather 
-                      name={showConfirmPassword ? "eye-off" : "eye"} 
-                      size={20} 
-                      color="#6B7280" 
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Info box */}
-              <View style={styles.infoBox}>
-                <Feather name="info" size={16} color="#1E40AF" />
-                <Text style={styles.infoText}>
-                  <Text style={styles.infoBold}>Proceso de Validación:</Text>
-                  {'\n'}Tu perfil será revisado y validado por CAIL. Podrás postular a ofertas una vez validado tu perfil.
-                </Text>
-              </View>
-
-              {/* Botón Cambiar Contraseña */}
+            {/* Action Buttons */}
+            <View style={styles.actions}>
               <TouchableOpacity 
                 onPress={handleSubmit}
                 style={styles.submitButton}
+                activeOpacity={0.8}
               >
-                <Feather name="lock" size={20} color="#fff" style={styles.buttonIcon} />
-                <Text style={styles.submitText}>Cambiar Contraseña</Text>
+                <Text style={styles.submitText}>Cambiar contraseña</Text>
+                <Feather name="arrow-right" size={20} color="#FFFFFF" />
               </TouchableOpacity>
 
-              {/* Botón Cerrar sesión */}
               <TouchableOpacity 
                 onPress={onLogout}
                 style={styles.logoutButton}
               >
+                <Feather name="log-out" size={16} color="#6B7280" />
                 <Text style={styles.logoutText}>Cerrar sesión</Text>
               </TouchableOpacity>
             </View>
@@ -189,108 +223,156 @@ const styles = StyleSheet.create({
     padding: 24,
     justifyContent: 'center',
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 24,
+
+  // Card
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 5,
+    maxHeight: '85%',
   },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
+  cardHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
     marginBottom: 16,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
-    textAlign: 'center',
-    paddingHorizontal: 20,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 24,
-  },
-  companyInfo: {
-    flexDirection: 'row',
+  iconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
     backgroundColor: '#FEF3C7',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    gap: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  companyIcon: {
+  iconInner: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
+    borderRadius: 10,
+    backgroundColor: '#F59E0B',
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerText: {
+    flex: 1,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 2,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: '#6B7280',
+  },
+
+  // Company Banner
+  companyBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  companyIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   companyDetails: {
     flex: 1,
+    gap: 4,
+  },
+  companyText: {
+    fontSize: 13,
+    lineHeight: 18,
   },
   companyLabel: {
-    fontSize: 13,
     color: '#92400E',
-    marginBottom: 4,
+    fontWeight: '500',
   },
-  companyName: {
+  companyValue: {
+    color: '#78350F',
     fontWeight: '700',
-    color: '#78350F',
   },
-  contactLabel: {
-    fontSize: 13,
-    color: '#92400E',
+
+  // Form
+  formScroll: {
+    maxHeight: 340,
   },
-  contactName: {
-    fontWeight: '600',
-    color: '#78350F',
+  formContent: {
+    paddingBottom: 8,
   },
   form: {
-    gap: 16,
+    gap: 20,
   },
-  inputGroup: {
-    marginBottom: 4,
+  section: {
+    gap: 12,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  passwordInput: {
+  sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
+    gap: 8,
   },
-  input: {
-    flex: 1,
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#374151',
+  },
+  inputGroup: {
+    gap: 6,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#374151',
+  },
+
+  // Password
+  passwordContainer: {
+    position: 'relative',
+  },
+  passwordInput: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
+    paddingRight: 50,
     fontSize: 14,
     color: '#1F2937',
   },
-  eyeButton: {
-    padding: 12,
+  passwordToggle: {
+    position: 'absolute',
+    right: 12,
+    top: 12,
+    padding: 8,
   },
+
+  // Info Box
   infoBox: {
     flexDirection: 'row',
-    backgroundColor: '#EFF6FF',
-    borderRadius: 8,
-    padding: 12,
-    gap: 8,
     alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: '#EFF6FF',
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
     marginTop: 8,
   },
   infoText: {
@@ -300,38 +382,52 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   infoBold: {
-    fontWeight: '600',
+    fontWeight: '700',
+  },
+
+  // Actions
+  actions: {
+    marginTop: 16,
+    gap: 12,
   },
   submitButton: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     backgroundColor: '#F59E0B',
     paddingVertical: 14,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-  },
-  buttonIcon: {
-    marginRight: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   submitText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   logoutButton: {
-    paddingVertical: 12,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
   },
   logoutText: {
     color: '#6B7280',
     fontSize: 14,
     fontWeight: '500',
   },
+
+  // Footer
   footer: {
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255,255,255,0.9)',
     fontSize: 12,
     textAlign: 'center',
     marginTop: 20,
+    fontWeight: '500',
   },
 });

@@ -5,8 +5,10 @@ import { colors } from '@/theme/colors';
 import { CANDIDATE_APPLICATIONS } from '@/data/mockData';
 import { useResponsiveLayout } from '@/hooks/useResponsive';
 
+type ApplicationStatusKey = 'postulado' | 'revision' | 'entrevista' | 'oferta' | 'finalizado';
+
 const statusTone: Record<
-  string,
+  ApplicationStatusKey,
   {
     label: string;
     tone: 'info' | 'warning' | 'success' | 'danger' | 'neutral';
@@ -51,15 +53,32 @@ const statusTone: Record<
   },
 };
 
+const normalizeStatus = (status: string): ApplicationStatusKey => {
+  const normalized = status.toLowerCase();
+  if (normalized.includes('revisión') || normalized.includes('revision')) return 'revision';
+  if (normalized.includes('entrevista')) return 'entrevista';
+  if (normalized.includes('oferta')) return 'oferta';
+  if (normalized.includes('final')) return 'finalizado';
+  return 'postulado';
+};
+
 export function MyApplicationsScreen() {
   const { contentWidth } = useResponsiveLayout();
   const summary = CANDIDATE_APPLICATIONS.reduce(
     (acc, app) => {
+      const normalizedStatus = normalizeStatus(app.status);
       acc.total += 1;
-      acc[app.status] = (acc[app.status] ?? 0) + 1;
+      acc[normalizedStatus] = (acc[normalizedStatus] ?? 0) + 1;
       return acc;
     },
-    { total: 0, postulado: 0, revision: 0, entrevista: 0, oferta: 0, finalizado: 0 } as Record<string, number>,
+    {
+      total: 0,
+      postulado: 0,
+      revision: 0,
+      entrevista: 0,
+      oferta: 0,
+      finalizado: 0,
+    } as Record<ApplicationStatusKey | 'total', number>,
   );
 
   return (
@@ -84,7 +103,7 @@ export function MyApplicationsScreen() {
           {/* Stats Row */}
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
-              <Feather name="file-text" size={20} color="#0B7A4D" />
+              <Feather name="file-text" size={20} color="#10B981" />
               <Text style={styles.statNumber}>{summary.total}</Text>
               <Text style={styles.statLabel}>Total postulaciones</Text>
             </View>
@@ -94,9 +113,9 @@ export function MyApplicationsScreen() {
               <Text style={styles.statLabel}>En revisión</Text>
             </View>
             <View style={styles.statBox}>
-              <Feather name="gift" size={20} color="#10B981" />
-              <Text style={styles.statNumber}>{summary.oferta}</Text>
-              <Text style={styles.statLabel}>Ofertas</Text>
+              <Feather name="calendar" size={20} color="#3B82F6" />
+              <Text style={styles.statNumber}>{summary.entrevista}</Text>
+              <Text style={styles.statLabel}>Entrevistas</Text>
             </View>
           </View>
         </View>
@@ -109,7 +128,8 @@ export function MyApplicationsScreen() {
 
         {/* Application Cards */}
         {CANDIDATE_APPLICATIONS.map((application) => {
-          const tone = statusTone[application.status];
+          const normalizedStatus = normalizeStatus(application.status);
+          const tone = statusTone[normalizedStatus] ?? statusTone.postulado;
           return (
             <View key={application.id} style={styles.applicationCard}>
               <View style={[styles.cardAccent, { backgroundColor: tone.accent }]} />

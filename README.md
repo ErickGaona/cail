@@ -92,7 +92,7 @@ Una aplicación **web** y **móvil nativa**, con **soporte en la nube**, desarro
   <tr>
     <td align="center" style="padding: 20px; border: 1px solid #ddd;">
       <strong>Frontend Desplegado</strong><br><br>
-      <img width="300" height="300" alt="cail" src="https://github.com/user-attachments/assets/bdaa440f-21ef-45f9-bb94-ac6a95586ff1" />
+      <img width="300" height="300" alt="cail" src="https://github.com/user-attachments/assets/898a6125-ea93-4439-87ad-7dac706e5a37" />
       <br>
       </a>
     </td>

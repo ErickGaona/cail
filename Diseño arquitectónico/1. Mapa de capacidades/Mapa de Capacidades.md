@@ -24,13 +24,13 @@ En el contexto de una aplicación de software, un mapa de capacidades permite:
 
 ---
 
-### **Estructura de este Mapa de Capacidades**
+### Estructura de este Mapa de Capacidades
 
 Este mapa de capacidades detalla el flujo completo de una plataforma de bolsa de empleos. Los módulos están organizados de manera jerárquica y secuencial, permitiendo a los desarrolladores, diseñadores y *stakeholders* entender el alcance de cada funcionalidad, desde el registro inicial hasta la aceptación del postulante.
 
 ---
 
-## **Mapa de Capacidades de la Aplicación Bolsa de Empleos - "CAIL" **
+## Mapa de Capacidades de la Aplicación Bolsa de Empleos - "CAIL" 
 
 ![Mapa de Capacidades](https://github.com/user-attachments/assets/162efbbe-a985-4a0c-9532-a4e8ad182aff)
 
@@ -43,7 +43,7 @@ Este mapa fue diseñado para una aplicación integral de gestión de postulacion
 
 ---
 
-# **Descripción de las Áreas de Capacidad**
+# Descripción de las Áreas de Capacidad
 
 A continuación, se detallan los módulos y funcionalidades de cada área principal.
 
@@ -150,6 +150,7 @@ Flujo de decisión final del empleador sobre un candidato.
 - **Decisión:** Capacidades para seleccionar candidatos y rechazar a otros.
 
 ---
+
 
 
 

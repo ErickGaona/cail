@@ -179,7 +179,7 @@ export const NOTIFICATION_ITEMS: NotificationItem[] = [
   {
     id: 'n2',
     title: 'Nuevas ofertas en Tecnología',
-    description: '4 empresas abrieron vacantes para perfiles de Desarrollo Backend.',
+    description: '4 vacantes se abrieron para Desarrollo Backend.',
     date: '27 OCT',
     category: 'Sugerencia',
   },

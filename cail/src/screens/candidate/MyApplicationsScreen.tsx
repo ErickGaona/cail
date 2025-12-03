@@ -141,9 +141,9 @@ export function MyApplicationsScreen() {
                     <Text style={styles.cardTitle} numberOfLines={2}>
                       {application.title}
                     </Text>
-                    <Text style={styles.cardCompany} numberOfLines={1}>
+                    {/* <Text style={styles.cardCompany} numberOfLines={1}>
                       {application.company}
-                    </Text>
+                    </Text> */}
                   </View>
                   <StatusBadge label={tone.label} tone={tone.tone} />
                 </View>

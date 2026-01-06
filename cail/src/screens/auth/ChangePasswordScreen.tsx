@@ -3,6 +3,7 @@ import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, View, TextInput, Tou
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { useResponsiveLayout } from '@/hooks/useResponsive';
+import { authService } from '@/services/auth.service';
 
 interface ChangePasswordScreenProps {
   userData: any;
@@ -18,8 +19,9 @@ export function ChangePasswordScreen({ userData, onPasswordChanged, onLogout }: 
   const [showTempPassword, setShowTempPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!tempPassword) {
       Alert.alert('Campo requerido', 'Ingresa tu contraseña temporal.');
       return;
@@ -32,13 +34,24 @@ export function ChangePasswordScreen({ userData, onPasswordChanged, onLogout }: 
       Alert.alert('Validación', 'Las contraseñas no coinciden.');
       return;
     }
-    onPasswordChanged();
+
+    setLoading(true);
+    try {
+      await authService.changePassword(tempPassword, newPassword);
+      Alert.alert('Éxito', 'Contraseña actualizada correctamente', [
+        { text: 'OK', onPress: onPasswordChanged }
+      ]);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'No se pudo cambiar la contraseña');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.gradient}>
       <SafeAreaView style={styles.safe}>
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={[styles.container, { paddingHorizontal: horizontalGutter }]}
           showsVerticalScrollIndicator={false}
         >
@@ -75,8 +88,8 @@ export function ChangePasswordScreen({ userData, onPasswordChanged, onLogout }: 
             </View>
 
             {/* Form Content */}
-            <ScrollView 
-              style={styles.formScroll} 
+            <ScrollView
+              style={styles.formScroll}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.formContent}
             >
@@ -99,14 +112,14 @@ export function ChangePasswordScreen({ userData, onPasswordChanged, onLogout }: 
                         placeholderTextColor="#9CA3AF"
                         secureTextEntry={!showTempPassword}
                       />
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         onPress={() => setShowTempPassword(!showTempPassword)}
                         style={styles.passwordToggle}
                       >
-                        <Feather 
-                          name={showTempPassword ? 'eye-off' : 'eye'} 
-                          size={18} 
-                          color="#9CA3AF" 
+                        <Feather
+                          name={showTempPassword ? 'eye-off' : 'eye'}
+                          size={18}
+                          color="#9CA3AF"
                         />
                       </TouchableOpacity>
                     </View>
@@ -131,14 +144,14 @@ export function ChangePasswordScreen({ userData, onPasswordChanged, onLogout }: 
                         placeholderTextColor="#9CA3AF"
                         secureTextEntry={!showNewPassword}
                       />
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         onPress={() => setShowNewPassword(!showNewPassword)}
                         style={styles.passwordToggle}
                       >
-                        <Feather 
-                          name={showNewPassword ? 'eye-off' : 'eye'} 
-                          size={18} 
-                          color="#9CA3AF" 
+                        <Feather
+                          name={showNewPassword ? 'eye-off' : 'eye'}
+                          size={18}
+                          color="#9CA3AF"
                         />
                       </TouchableOpacity>
                     </View>
@@ -155,14 +168,14 @@ export function ChangePasswordScreen({ userData, onPasswordChanged, onLogout }: 
                         placeholderTextColor="#9CA3AF"
                         secureTextEntry={!showConfirmPassword}
                       />
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                         style={styles.passwordToggle}
                       >
-                        <Feather 
-                          name={showConfirmPassword ? 'eye-off' : 'eye'} 
-                          size={18} 
-                          color="#9CA3AF" 
+                        <Feather
+                          name={showConfirmPassword ? 'eye-off' : 'eye'}
+                          size={18}
+                          color="#9CA3AF"
                         />
                       </TouchableOpacity>
                     </View>
@@ -182,16 +195,19 @@ export function ChangePasswordScreen({ userData, onPasswordChanged, onLogout }: 
 
             {/* Action Buttons */}
             <View style={styles.actions}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={handleSubmit}
-                style={styles.submitButton}
+                style={[styles.submitButton, loading && styles.submitButtonDisabled]}
                 activeOpacity={0.8}
+                disabled={loading}
               >
-                <Text style={styles.submitText}>Cambiar contraseña</Text>
+                <Text style={styles.submitText}>
+                  {loading ? 'Cambiando...' : 'Cambiar contraseña'}
+                </Text>
                 <Feather name="arrow-right" size={20} color="#FFFFFF" />
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={onLogout}
                 style={styles.logoutButton}
               >

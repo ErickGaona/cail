@@ -4,6 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { InputField } from '@/components/ui/InputField';
 import { UserRole } from '@/types';
+import { authService } from '@/services/auth.service';
 
 interface LoginFormProps {
   role: UserRole;
@@ -18,32 +19,39 @@ export function LoginForm({ role, onSuccess, onBack, onSwitchToRegister }: Login
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!email || !password) {
       Alert.alert('Campos incompletos', 'Ingresa tu correo y contraseña.');
       return;
     }
+
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+
+    try {
+      const response = await authService.login(email, password);
+
       if (role === 'candidate') {
         onSuccess({
-          id: 'candidate-1',
-          name: 'María Fernanda Calle',
-          email,
-          progress: 0.82,
+          id: response.idCuenta,
+          name: response.nombreCompleto,
+          email: response.email,
+          progress: 0.5,
         });
       } else {
         onSuccess({
-          id: 'employer-1',
-          company: 'TechSolutions Loja',
-          contactName: 'Patricia Ludeña',
-          email,
+          id: response.idCuenta,
+          company: 'Empresa',
+          contactName: response.nombreCompleto,
+          email: response.email,
           needsPasswordChange: false,
           isEmailVerified: true,
         });
       }
-    }, 700);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Error al iniciar sesión');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const accentColor = role === 'candidate' ? '#0B7A4D' : '#F59E0B';
@@ -73,8 +81,8 @@ export function LoginForm({ role, onSuccess, onBack, onSwitchToRegister }: Login
       {/* Title */}
       <Text style={styles.title}>Bienvenido de nuevo</Text>
       <Text style={styles.subtitle}>
-        {role === 'candidate' 
-          ? 'Accede como Candidato' 
+        {role === 'candidate'
+          ? 'Accede como Candidato'
           : 'Accede como Empleador'}
       </Text>
 
@@ -111,14 +119,14 @@ export function LoginForm({ role, onSuccess, onBack, onSwitchToRegister }: Login
                 placeholder="Ingresa tu contraseña"
                 secureTextEntry={!showPassword}
               />
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.passwordToggle}
               >
-                <Feather 
-                  name={showPassword ? 'eye-off' : 'eye'} 
-                  size={18} 
-                  color="#9CA3AF" 
+                <Feather
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={18}
+                  color="#9CA3AF"
                 />
               </TouchableOpacity>
             </View>
@@ -133,7 +141,7 @@ export function LoginForm({ role, onSuccess, onBack, onSwitchToRegister }: Login
         </TouchableOpacity>
 
         {/* Submit Button */}
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={handleSubmit}
           style={[styles.submitButton, { backgroundColor: accentColor }]}
           activeOpacity={0.8}
@@ -158,7 +166,7 @@ export function LoginForm({ role, onSuccess, onBack, onSwitchToRegister }: Login
         </View>
 
         {/* Register Link */}
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={onSwitchToRegister}
           style={styles.registerButton}
         >

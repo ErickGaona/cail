@@ -4,6 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { InputField } from '@/components/ui/InputField';
 import { LoadingSplash } from '@/components/ui/LoadingSplash';
+import { PasswordStrength, validatePassword } from '@/components/ui/PasswordStrength';
 import { authService } from '@/services/auth.service';
 
 interface RegisterCandidateFormProps {
@@ -54,6 +55,14 @@ export function RegisterCandidateForm({ onSuccess, onBack, onSwitchToLogin }: Re
         Alert.alert('Campos incompletos', 'Completa todos los campos requeridos.');
         return;
       }
+
+      // Validate password strength
+      const passwordValidation = validatePassword(password);
+      if (!passwordValidation.isValid) {
+        Alert.alert('Contraseña inválida', passwordValidation.errors[0]);
+        return;
+      }
+
       if (password !== confirmPassword) {
         Alert.alert('Error', 'Las contraseñas no coinciden.');
         return;
@@ -318,7 +327,7 @@ export function RegisterCandidateForm({ onSuccess, onBack, onSwitchToLogin }: Re
                       style={styles.passwordInput}
                       value={password}
                       onChangeText={setPassword}
-                      placeholder="Mínimo 6 caracteres"
+                      placeholder="Mínimo 12 caracteres"
                       secureTextEntry={!showPassword}
                       placeholderTextColor="#9CA3AF"
                     />
@@ -333,6 +342,7 @@ export function RegisterCandidateForm({ onSuccess, onBack, onSwitchToLogin }: Re
                       />
                     </TouchableOpacity>
                   </View>
+                  <PasswordStrength password={password} variant="candidate" />
                 </View>
 
                 <View style={styles.inputGroup}>

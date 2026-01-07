@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { useResponsiveLayout } from '@/hooks/useResponsive';
 import { LoadingSplash } from '@/components/ui/LoadingSplash';
+import { PasswordStrength, validatePassword } from '@/components/ui/PasswordStrength';
 import { authService } from '@/services/auth.service';
 
 interface ChangePasswordScreenProps {
@@ -30,10 +31,14 @@ export function ChangePasswordScreen({ userData, onPasswordChanged, onLogout }: 
       Alert.alert('Campo requerido', 'Ingresa tu contraseña temporal.');
       return;
     }
-    if (newPassword.length < 6) {
-      Alert.alert('Contraseña débil', 'Usa al menos 6 caracteres.');
+
+    // Validate password strength
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+      Alert.alert('Contraseña inválida', passwordValidation.errors[0]);
       return;
     }
+
     if (newPassword !== confirmPassword) {
       Alert.alert('Validación', 'Las contraseñas no coinciden.');
       return;
@@ -149,7 +154,7 @@ export function ChangePasswordScreen({ userData, onPasswordChanged, onLogout }: 
                         style={styles.passwordInput}
                         value={newPassword}
                         onChangeText={setNewPassword}
-                        placeholder="Mínimo 6 caracteres"
+                        placeholder="Mínimo 12 caracteres"
                         placeholderTextColor="#9CA3AF"
                         secureTextEntry={!showNewPassword}
                       />
@@ -164,6 +169,7 @@ export function ChangePasswordScreen({ userData, onPasswordChanged, onLogout }: 
                         />
                       </TouchableOpacity>
                     </View>
+                    <PasswordStrength password={newPassword} variant="employer" />
                   </View>
 
                   <View style={styles.inputGroup}>
@@ -196,7 +202,7 @@ export function ChangePasswordScreen({ userData, onPasswordChanged, onLogout }: 
                   <Feather name="shield" size={16} color="#3B82F6" />
                   <Text style={styles.infoText}>
                     <Text style={styles.infoBold}>Seguridad: </Text>
-                    Tu nueva contraseña debe tener al menos 6 caracteres. Te recomendamos usar una combinación de letras, números y símbolos.
+                    Tu nueva contraseña debe tener al menos 12 caracteres, una mayúscula, un número y un carácter especial.
                   </Text>
                 </View>
               </View>

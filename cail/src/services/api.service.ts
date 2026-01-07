@@ -6,11 +6,19 @@ import { ApiError } from '@/types/auth.types';
 const TOKEN_KEY = '@cail_auth_token';
 
 class ApiService {
-    private client: AxiosInstance;
+    private usuariosClient: AxiosInstance;
+    private ofertasClient: AxiosInstance;
+    private matchingClient: AxiosInstance;
 
     constructor() {
-        this.client = axios.create({
-            baseURL: API_CONFIG.BASE_URL,
+        this.usuariosClient = this.createClient(API_CONFIG.SERVICES.USUARIOS);
+        this.ofertasClient = this.createClient(API_CONFIG.SERVICES.OFERTAS);
+        this.matchingClient = this.createClient(API_CONFIG.SERVICES.MATCHING);
+    }
+
+    private createClient(baseURL: string): AxiosInstance {
+        const client = axios.create({
+            baseURL,
             timeout: API_CONFIG.TIMEOUT,
             headers: {
                 'Content-Type': 'application/json',
@@ -18,7 +26,7 @@ class ApiService {
         });
 
         // Request interceptor - add auth token
-        this.client.interceptors.request.use(
+        client.interceptors.request.use(
             async (config) => {
                 const token = await AsyncStorage.getItem(TOKEN_KEY);
                 if (token) {
@@ -30,7 +38,7 @@ class ApiService {
         );
 
         // Response interceptor - handle errors
-        this.client.interceptors.response.use(
+        client.interceptors.response.use(
             (response) => response,
             (error: AxiosError) => {
                 const apiError: ApiError = {
@@ -41,6 +49,22 @@ class ApiService {
                 return Promise.reject(apiError);
             }
         );
+
+        return client;
+    }
+
+    private getClientForPath(url: string): AxiosInstance {
+        if (url.startsWith('/auth') || url.startsWith('/users')) {
+            return this.usuariosClient;
+        }
+        if (url.startsWith('/offers')) {
+            return this.ofertasClient;
+        }
+        if (url.startsWith('/matching')) {
+            return this.matchingClient;
+        }
+        // Default to usuarios for unknown paths (could be legacy or general)
+        return this.usuariosClient;
     }
 
     private getErrorMessage(error: AxiosError): string {
@@ -61,28 +85,32 @@ class ApiService {
     }
 
     async get<T>(url: string): Promise<T> {
-        const response = await this.client.get<T>(url);
+        const client = this.getClientForPath(url);
+        const response = await client.get<T>(url);
         return response.data;
     }
 
     async post<T>(url: string, data?: any): Promise<T> {
-        const response = await this.client.post<T>(url, data);
+        const client = this.getClientForPath(url);
+        const response = await client.post<T>(url, data);
         return response.data;
     }
 
     async put<T>(url: string, data?: any): Promise<T> {
-        const response = await this.client.put<T>(url, data);
+        const client = this.getClientForPath(url);
+        const response = await client.put<T>(url, data);
         return response.data;
     }
 
     async delete<T>(url: string): Promise<T> {
-        const response = await this.client.delete<T>(url);
+        const client = this.getClientForPath(url);
+        const response = await client.delete<T>(url);
         return response.data;
     }
 
     // User profile
     async getUserProfile<T>(): Promise<T> {
-        const response = await this.client.get<T>('/api/v1/users/profile');
+        const response = await this.usuariosClient.get<T>('/users/profile');
         return response.data;
     }
 

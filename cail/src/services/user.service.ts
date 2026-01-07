@@ -52,7 +52,7 @@ class UserService {
      */
     async updateProfile(data: Partial<UserProfile>): Promise<UserProfile> {
         const response = await apiService.put<BackendApiResponse<UserProfile>>(
-            '/api/v1/users/profile',
+            API_CONFIG.ENDPOINTS.PROFILE,
             data
         );
         return response.data;

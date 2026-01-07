@@ -15,6 +15,8 @@
 4. [Checklist de Validación de Código](#4-checklist-de-validación-de-código)
 5. [Herramientas de Validación](#5-herramientas-de-validación)
 6. [Proceso de Revisión de Código](#6-proceso-de-revisión-de-código)
+7. [Seguridad de APIs y Comunicación](#7-seguridad-de-apis-y-comunicación)
+8. [Notas Importantes por Desarrollador](#8-notas-importantes-por-desarrollador)
 
 ---
 
@@ -959,9 +961,481 @@ jobs:
 
 ---
 
+## 7. Seguridad de APIs y Comunicación
+
+Esta sección explica cómo implementar comunicación segura entre servicios, proteger los endpoints y evitar fugas de información.
+
+### 7.1 Principios de Comunicación Segura
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    COMUNICACIÓN SEGURA ENTRE SERVICIOS                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   CLIENTE (App/Web)                                                         │
+│        │                                                                    │
+│        │ 1. HTTPS (TLS 1.3)                                                │
+│        │ 2. JWT en header Authorization                                    │
+│        │ 3. Sin datos sensibles en URL                                     │
+│        ▼                                                                    │
+│   ┌──────────────┐                                                          │
+│   │ WSO2 Gateway │ ◄── Valida JWT, Rate Limit, Logs                        │
+│   └──────┬───────┘                                                          │
+│          │                                                                  │
+│          │ 4. Reenvía solo si JWT válido                                   │
+│          │ 5. Agrega headers internos                                      │
+│          ▼                                                                  │
+│   ┌──────────────┐                                                          │
+│   │   Backend    │ ◄── Valida de nuevo, procesa, responde                  │
+│   │  Cloud Run   │                                                          │
+│   └──────┬───────┘                                                          │
+│          │                                                                  │
+│          │ 6. Conexión segura a Firestore                                  │
+│          ▼                                                                  │
+│   ┌──────────────┐                                                          │
+│   │  Firestore   │ ◄── Security Rules + Cifrado en reposo                  │
+│   └──────────────┘                                                          │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 7.2 Cómo Llamar a una API de Manera Segura
+
+#### ❌ INCORRECTO - Llamada Insegura
+
+```typescript
+// NUNCA hacer esto
+const response = await fetch('http://api.cail.ec/users?password=123456');
+
+// Problemas:
+// 1. HTTP en lugar de HTTPS (tráfico no cifrado)
+// 2. Password en la URL (se guarda en logs, historial)
+// 3. Sin autenticación
+```
+
+#### ✅ CORRECTO - Llamada Segura
+
+```typescript
+// Así se debe hacer
+const response = await fetch('https://api.cail.ec/api/v1/users', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${accessToken}`,  // JWT en header
+    'X-Request-ID': generateRequestId(),        // Para tracking
+  },
+  body: JSON.stringify({
+    email: userEmail,    // Datos sensibles en el body, no en URL
+    password: password   // Nunca en URL
+  })
+});
+
+// Manejar respuesta sin exponer errores internos
+if (!response.ok) {
+  const error = await response.json();
+  console.error('Request failed:', error.message); // Solo mensaje, no detalles
+  throw new Error('Error en la solicitud');
+}
+```
+
+### 7.3 Protección de Endpoints
+
+#### Headers de Seguridad Obligatorios (Helmet)
+
+```typescript
+// src/config/security.ts
+import helmet from 'helmet';
+import cors from 'cors';
+import rateLimit from 'express-rate-limit';
+
+export const configureSecurityMiddleware = (app: Express) => {
+  // 1. HELMET - Headers de seguridad
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+      },
+    },
+    hsts: {
+      maxAge: 31536000,        // 1 año
+      includeSubDomains: true,
+      preload: true
+    },
+    noSniff: true,             // X-Content-Type-Options: nosniff
+    frameguard: { action: 'deny' }, // X-Frame-Options: DENY
+    xssFilter: true            // X-XSS-Protection
+  }));
+
+  // 2. CORS - Solo dominios permitidos
+  app.use(cors({
+    origin: [
+      'https://cail.ec',
+      'https://app.cail.ec',
+      'https://admin.cail.ec'
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    maxAge: 86400  // Cache preflight por 24 horas
+  }));
+
+  // 3. RATE LIMITING - Prevenir abuso
+  app.use(rateLimit({
+    windowMs: 15 * 60 * 1000,  // 15 minutos
+    max: 100,                   // 100 requests por ventana
+    message: { error: 'Demasiadas solicitudes, intente más tarde' },
+    standardHeaders: true,
+    legacyHeaders: false,
+  }));
+
+  // 4. Limitar tamaño del body
+  app.use(express.json({ limit: '10kb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+};
+```
+
+### 7.4 Seguridad de Puertos y Exposición
+
+#### Configuración Segura de Puertos
+
+| Puerto | Servicio | Exposición | Configuración Segura |
+|--------|----------|------------|---------------------|
+| 8080 | Backend (Cloud Run) | Interna | Solo accesible desde Gateway |
+| 443 | WSO2 Gateway | Pública | HTTPS obligatorio |
+| 443 | Firestore | Google Cloud | Conexión SDK (no directa) |
+| 9229 | Node Debug | ⛔ NUNCA | Deshabilitado en producción |
+
+#### Dockerfile - Solo Exponer Puerto Necesario
+
+```dockerfile
+# ✅ CORRECTO
+EXPOSE 8080
+
+# ❌ INCORRECTO - No exponer múltiples puertos
+# EXPOSE 8080 9229 3000
+```
+
+#### Variables de Entorno para Puertos
+
+```typescript
+// ✅ CORRECTO - Puerto desde variable de entorno
+const PORT = process.env.PORT || 8080;
+
+// ❌ INCORRECTO - Puerto hardcodeado
+const PORT = 8080;
+```
+
+### 7.5 Prevención de Fugas de Información
+
+#### Qué NO debe salir nunca en responses:
+
+```typescript
+// ❌ INCORRECTO - Expone información sensible
+res.status(500).json({
+  error: err.message,
+  stack: err.stack,           // Expone código interno
+  query: req.query,           // Expone parámetros
+  headers: req.headers,       // Expone tokens
+  user: {
+    password: user.password,  // Expone contraseña
+    cedula: user.cedula       // Expone datos personales completos
+  }
+});
+
+// ✅ CORRECTO - Respuesta segura
+res.status(500).json({
+  status: 'error',
+  message: 'Error interno del servidor',
+  requestId: req.requestId    // Solo para tracking
+});
+```
+
+#### Qué NO debe aparecer en logs:
+
+```typescript
+// ❌ INCORRECTO
+console.log('Login attempt:', { email, password });
+console.log('Token:', token);
+console.log('User data:', user);
+
+// ✅ CORRECTO
+console.log('Login attempt:', { email, timestamp: new Date() });
+console.log('Token generated for user:', userId);
+console.log('User action:', { userId, action: 'login', success: true });
+```
+
+### 7.6 Comunicación Segura entre Microservicios (Futuro)
+
+Cuando migren a microservicios, así deben comunicarse:
+
+```typescript
+// offers-service llamando a users-service
+
+import axios from 'axios';
+
+class UsersServiceClient {
+  private baseUrl: string;
+  private serviceToken: string;
+
+  constructor() {
+    // URLs desde variables de entorno
+    this.baseUrl = process.env.USERS_SERVICE_URL || 'http://users-service:8082';
+    this.serviceToken = process.env.INTERNAL_SERVICE_TOKEN;
+  }
+
+  async getUserById(userId: string): Promise<User> {
+    try {
+      const response = await axios.get(`${this.baseUrl}/api/users/${userId}`, {
+        headers: {
+          // Token de servicio-a-servicio (diferente al JWT de usuario)
+          'Authorization': `Bearer ${this.serviceToken}`,
+          'X-Service-Name': 'offers-service',
+          'X-Request-ID': generateRequestId(),
+        },
+        timeout: 5000,  // Timeout de 5 segundos
+        validateStatus: (status) => status < 500
+      });
+
+      if (response.status === 404) {
+        throw new NotFoundError('Usuario no encontrado');
+      }
+
+      return response.data;
+    } catch (error) {
+      // Log sin exponer detalles
+      console.error('Error calling users-service:', {
+        userId,
+        errorCode: error.code,
+        timestamp: new Date()
+      });
+      throw new ServiceUnavailableError('Servicio de usuarios no disponible');
+    }
+  }
+}
+```
+
+---
+
+## 8. Notas Importantes por Desarrollador
+
+### 📌 ALEX RAMÍREZ - Infraestructura y Auth
+
+> **ASEGURARSE DE:**
+
+| # | Nota Importante | Por qué |
+|---|-----------------|---------|
+| 1 | **Instalar Helmet ANTES de definir rutas** | Si se pone después, las rutas no tendrán los headers de seguridad |
+| 2 | **CORS no debe ser `origin: '*'`** | Permite que cualquier sitio llame a tu API (inseguro) |
+| 3 | **Rate limit diferente para login** | Login debe ser más estricto (5 intentos) que endpoints normales (100) |
+| 4 | **PASSWORD: 12+ caracteres obligatorio** | Menos de 12 es vulnerable a fuerza bruta |
+| 5 | **No revelar si email existe en registro** | Un atacante puede enumerar usuarios |
+| 6 | **Dockerfile: USER después de COPY** | Si pones USER antes, no podrás copiar archivos |
+
+```typescript
+// ⚠️ EJEMPLO: Orden correcto de middleware
+app.use(helmet());           // 1. Primero seguridad
+app.use(cors(corsOptions));  // 2. Luego CORS
+app.use(rateLimiter);        // 3. Luego rate limit
+app.use(express.json());     // 4. Luego parsers
+app.use('/api', routes);     // 5. Al final rutas
+```
+
+---
+
+### 📌 CARLOS MEJIA - JWT y WSO2
+
+> **ASEGURARSE DE:**
+
+| # | Nota Importante | Por qué |
+|---|-----------------|---------|
+| 1 | **JWT_SECRET mínimo 256 bits (32 chars)** | Menos es vulnerable a fuerza bruta |
+| 2 | **Access token: 1 hora máximo** | Tokens largos son más riesgosos si se filtran |
+| 3 | **Refresh token: 7 días máximo** | Después de 7 días, forzar re-login |
+| 4 | **Verificar token EN CADA REQUEST** | No cachear resultados de verificación |
+| 5 | **No poner datos sensibles en el JWT** | El JWT puede ser decodificado (solo está firmado, no cifrado) |
+| 6 | **WSO2: Validar JWT antes de reenviar** | El backend NO debe confiar ciegamente |
+
+```typescript
+// ⚠️ EJEMPLO: Qué poner y qué NO en el JWT
+// ✅ CORRECTO
+const payload = {
+  uid: user.id,
+  email: user.email,
+  role: user.tipoUsuario,
+  iat: Date.now()
+};
+
+// ❌ INCORRECTO - Nunca incluir esto
+const payload = {
+  password: user.password,      // NUNCA
+  cedula: user.cedula,          // NUNCA datos sensibles
+  creditCard: user.creditCard   // NUNCA
+};
+```
+
+---
+
+### 📌 JUAN ESPINOSA - Firestore y Usuarios
+
+> **ASEGURARSE DE:**
+
+| # | Nota Importante | Por qué |
+|---|-----------------|---------|
+| 1 | **Firestore Rules son OBLIGATORIAS** | Sin ellas, cualquiera puede leer/escribir TODO |
+| 2 | **Verificar propiedad en código Y en rules** | Doble capa de seguridad |
+| 3 | **Sanitizar ANTES de guardar, no después** | Si guardas datos maliciosos, ya es tarde |
+| 4 | **No usar IDs secuenciales** | Facilita enumerar usuarios (id=1, id=2, id=3...) |
+| 5 | **Logs de auditoría para cambios críticos** | Para investigar incidentes |
+| 6 | **No confiar en `type` del frontend** | Siempre validar rol en backend |
+
+```javascript
+// ⚠️ EJEMPLO: Firestore Rules básicas
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Un usuario SOLO puede leer/escribir SU documento
+    match /cuentas/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Las ofertas solo las pueden crear reclutadores
+    match /ofertas/{ofertaId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && 
+        get(/databases/$(database)/documents/cuentas/$(request.auth.uid)).data.tipoUsuario == 'reclutador';
+    }
+  }
+}
+```
+
+---
+
+### 📌 SEBASTIÁN CALDERÓN - Perfiles de Usuario
+
+> **ASEGURARSE DE:**
+
+| # | Nota Importante | Por qué |
+|---|-----------------|---------|
+| 1 | **Validar cédula en BACKEND, no solo frontend** | El frontend puede ser bypaseado |
+| 2 | **Upload de CV: validar MIME type en backend** | El frontend solo valida extensión, un atacante puede cambiarla |
+| 3 | **Límite de 5MB en el servidor** | Configurar en multer Y en nginx/express |
+| 4 | **No retornar cédula completa en listados** | Mostrar solo primeros 4 dígitos: `0102******` |
+| 5 | **Respetar configuración de privacidad** | Si usuario dice "no mostrar email", NO mostrarlo |
+| 6 | **Validar RUC para empresas** | 13 dígitos, algoritmo de validación |
+
+```typescript
+// ⚠️ EJEMPLO: Validación de cédula ecuatoriana
+function validarCedulaEC(cedula: string): boolean {
+  if (!/^\d{10}$/.test(cedula)) return false;
+  
+  const provincia = parseInt(cedula.substring(0, 2));
+  if (provincia < 1 || provincia > 24) return false;
+  
+  const tercerDigito = parseInt(cedula.charAt(2));
+  if (tercerDigito > 5) return false;
+  
+  // Algoritmo Módulo 10
+  const coeficientes = [2, 1, 2, 1, 2, 1, 2, 1, 2];
+  let suma = 0;
+  for (let i = 0; i < 9; i++) {
+    let valor = parseInt(cedula.charAt(i)) * coeficientes[i];
+    if (valor > 9) valor -= 9;
+    suma += valor;
+  }
+  const digitoVerificador = (10 - (suma % 10)) % 10;
+  return digitoVerificador === parseInt(cedula.charAt(9));
+}
+```
+
+---
+
+### 📌 ERICK GAONA - Ofertas
+
+> **ASEGURARSE DE:**
+
+| # | Nota Importante | Por qué |
+|---|-----------------|---------|
+| 1 | **Verificar rol ANTES de crear oferta** | Solo reclutadores pueden crear |
+| 2 | **Sanitizar descripción de oferta** | Puede contener scripts maliciosos |
+| 3 | **Paginación obligatoria, máximo 50** | Evitar que alguien descargue toda la base de datos |
+| 4 | **Validar rangos de salario** | salario_min <= salario_max, ambos positivos |
+| 5 | **No permitir HTML peligroso** | Solo tags seguros: `<b>`, `<i>`, `<ul>`, `<li>`, `<p>` |
+| 6 | **Rate limiting en búsqueda** | Evitar scraping masivo |
+
+```typescript
+// ⚠️ EJEMPLO: Sanitización de descripción
+import sanitizeHtml from 'sanitize-html';
+
+const sanitizedDescription = sanitizeHtml(oferta.descripcion, {
+  allowedTags: ['b', 'i', 'u', 'p', 'br', 'ul', 'ol', 'li'],
+  allowedAttributes: {},  // Ningún atributo permitido
+  disallowedTagsMode: 'discard'
+});
+```
+
+---
+
+### 📌 DARA VAN GIJSEL - Matching y Postulación
+
+> **ASEGURARSE DE:**
+
+| # | Nota Importante | Por qué |
+|---|-----------------|---------|
+| 1 | **Verificar que usuario es POSTULANTE** | Reclutadores no deben poder postularse |
+| 2 | **Verificar que oferta está ACTIVA** | No postular a ofertas cerradas |
+| 3 | **Verificar postulación duplicada ANTES** | Evitar múltiples postulaciones |
+| 4 | **Límite de 10 postulaciones por día** | Evitar spam de postulaciones |
+| 5 | **No exponer lógica de matching** | Solo retornar score, no el breakdown |
+| 6 | **WSO2: Todas las rutas con JWT** | Ningún endpoint público sin auth |
+
+```typescript
+// ⚠️ EJEMPLO: Verificaciones antes de postular
+async function crearPostulacion(postulanteId: string, ofertaId: string) {
+  // 1. Verificar que es postulante
+  const cuenta = await getCuenta(postulanteId);
+  if (cuenta.tipoUsuario !== 'postulante') {
+    throw new ForbiddenError('Solo postulantes pueden postularse');
+  }
+  
+  // 2. Verificar que oferta está activa
+  const oferta = await getOferta(ofertaId);
+  if (oferta.estado !== 'activa') {
+    throw new BadRequestError('La oferta no está disponible');
+  }
+  
+  // 3. Verificar postulación duplicada
+  const existente = await getPostulacion(postulanteId, ofertaId);
+  if (existente) {
+    throw new ConflictError('Ya te postulaste a esta oferta');
+  }
+  
+  // 4. Verificar límite diario
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const countHoy = await countPostulacionesDesde(postulanteId, hoy);
+  if (countHoy >= 10) {
+    throw new TooManyRequestsError('Límite diario de postulaciones alcanzado');
+  }
+  
+  // Si pasa todo, crear postulación
+  return await savePostulacion({ postulanteId, ofertaId, estado: 'pendiente' });
+}
+```
+
+---
+
+## Contacto
+
+**Responsable de Seguridad:** Erick Gaona  
+**Email:** eogaona@utpl.edu.ec
+
+**⚠️ En caso de dudas sobre seguridad, consultar ANTES de implementar.**
 
 ---
 
 *Documento actualizado: Enero 2026*  
-*Versión: 1.0*
+*Versión: 2.0*
 

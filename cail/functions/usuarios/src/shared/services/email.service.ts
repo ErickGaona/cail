@@ -1,13 +1,14 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import { config } from '../../config/env.config';
 
 /**
- * Servicio de envío de emails usando Resend
- * En desarrollo, si no hay API key, solo loggea los emails
+ * Servicio de envío de emails usando Nodemailer con Gmail SMTP
+ * En desarrollo sin credenciales, solo loggea los emails
  */
 class EmailService {
-    private resend: Resend | null = null;
+    private transporter: nodemailer.Transporter | null = null;
     private isDevelopment: boolean;
+    private fromEmail: string;
 
     // Colores corporativos CAIL
     private readonly brandColors = {
@@ -24,12 +25,20 @@ class EmailService {
 
     constructor() {
         this.isDevelopment = config.nodeEnv === 'development';
+        this.fromEmail = config.email.gmailUser;
 
-        // Solo inicializar Resend si hay una API key válida
-        if (config.email.apiKey && config.email.apiKey.startsWith('re_')) {
-            this.resend = new Resend(config.email.apiKey);
+        // Solo inicializar transporter si hay credenciales de Gmail
+        if (config.email.gmailUser && config.email.gmailAppPassword) {
+            this.transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: config.email.gmailUser,
+                    pass: config.email.gmailAppPassword,
+                },
+            });
+            console.log('✅ Gmail SMTP configured successfully');
         } else {
-            console.warn('⚠️ Resend API key not configured. Emails will be logged to console.');
+            console.warn('⚠️ Gmail credentials not configured. Emails will be logged to console.');
         }
     }
 
@@ -128,19 +137,25 @@ class EmailService {
             </p>
         `;
 
-        const emailData = {
-            from: 'CAIL <onboarding@resend.dev>',
+        const mailOptions = {
+            from: `CAIL <${this.fromEmail}>`,
             to: email,
             subject: '🔐 Tu contraseña temporal de CAIL',
             html: this.getBaseTemplate(content),
         };
 
-        if (this.resend) {
-            await this.resend.emails.send(emailData);
+        if (this.transporter) {
+            try {
+                await this.transporter.sendMail(mailOptions);
+                console.log(`✅ Temporary password email sent to: ${email}`);
+            } catch (error) {
+                console.error('❌ Error sending email:', error);
+                throw new Error('Error enviando el correo electrónico');
+            }
         } else {
             console.log('📧 [DEV] Email would be sent:', {
                 to: email,
-                subject: emailData.subject,
+                subject: mailOptions.subject,
                 password: password // Solo en dev para debugging
             });
         }
@@ -195,19 +210,25 @@ class EmailService {
             </p>
         `;
 
-        const emailData = {
-            from: 'CAIL <onboarding@resend.dev>',
+        const mailOptions = {
+            from: `CAIL <${this.fromEmail}>`,
             to: email,
             subject: '🎉 ¡Bienvenido a CAIL!',
             html: this.getBaseTemplate(content),
         };
 
-        if (this.resend) {
-            await this.resend.emails.send(emailData);
+        if (this.transporter) {
+            try {
+                await this.transporter.sendMail(mailOptions);
+                console.log(`✅ Welcome email sent to: ${email}`);
+            } catch (error) {
+                console.error('❌ Error sending welcome email:', error);
+                throw new Error('Error enviando el correo de bienvenida');
+            }
         } else {
             console.log('📧 [DEV] Welcome email would be sent:', {
                 to: email,
-                subject: emailData.subject
+                subject: mailOptions.subject
             });
         }
     }

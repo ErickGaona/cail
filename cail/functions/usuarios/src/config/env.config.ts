@@ -22,7 +22,8 @@ interface EnvConfig {
         allowedOrigins: string[];
     };
     email: {
-        apiKey: string;
+        gmailUser: string;
+        gmailAppPassword: string;
     };
     // URLs de otros microservicios (para comunicación interna)
     services: {
@@ -63,7 +64,8 @@ const validateEnv = (): EnvConfig => {
             allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || ['*'],
         },
         email: {
-            apiKey: process.env.RESEND_API_KEY || '',
+            gmailUser: process.env.GMAIL_USER || '',
+            gmailAppPassword: process.env.GMAIL_APP_PASSWORD || '',
         },
         services: {
             ofertas: process.env.OFERTAS_SERVICE_URL || 'http://localhost:8083',

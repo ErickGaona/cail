@@ -1427,15 +1427,8 @@ async function crearPostulacion(postulanteId: string, ofertaId: string) {
 
 ---
 
-## Contacto
 
-**Responsable de Seguridad:** Erick Gaona  
-**Email:** eogaona@utpl.edu.ec
 
-**⚠️ En caso de dudas sobre seguridad, consultar ANTES de implementar.**
-
----
-
-*Documento actualizado: Enero 2026*  
-*Versión: 2.0*
+*Documento actualizado: 07 Enero 2026*  
+*Versión: 2.1*
 

@@ -17,6 +17,8 @@
 6. [Proceso de Revisión de Código](#6-proceso-de-revisión-de-código)
 7. [Seguridad de APIs y Comunicación](#7-seguridad-de-apis-y-comunicación)
 8. [Notas Importantes por Desarrollador](#8-notas-importantes-por-desarrollador)
+9. [SonarQube - Análisis de Calidad y Seguridad](#9-sonarqube---análisis-de-calidad-y-seguridad)
+10. [Plan de Testing y Pruebas de Seguridad](#10-plan-de-testing-y-pruebas-de-seguridad)
 
 ---
 
@@ -1427,15 +1429,519 @@ async function crearPostulacion(postulanteId: string, ofertaId: string) {
 
 ---
 
+## 9. SonarQube - Análisis de Calidad y Seguridad
+
+SonarQube es la herramienta de análisis estático (SAST) que utilizaremos para detectar vulnerabilidades, code smells y problemas de calidad automáticamente.
+
+### 9.1 ¿Qué es SonarQube?
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         FLUJO DE ANÁLISIS SONARQUBE                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   CÓDIGO                                                                    │
+│      │                                                                      │
+│      ▼                                                                      │
+│  ┌──────────────┐     ┌─────────────────┐     ┌─────────────────────────┐  │
+│  │   Scanner    │────►│   SonarQube     │────►│    Dashboard/Reporte    │  │
+│  │  (Análisis)  │     │    Servidor     │     │   - Bugs                │  │
+│  └──────────────┘     └─────────────────┘     │   - Vulnerabilidades    │  │
+│                                               │   - Code Smells         │  │
+│  Detecta:                                     │   - Cobertura Tests     │  │
+│  - SQL Injection                              │   - Duplicación         │  │
+│  - XSS                                        └─────────────────────────┘  │
+│  - Secrets hardcoded                                                       │
+│  - Código inseguro                                                         │
+│  - Malas prácticas                                                         │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 9.2 Configuración de SonarQube para el Proyecto
+
+#### Archivo `sonar-project.properties` (CREAR en raíz del backend)
+
+```properties
+# Identificación del proyecto
+sonar.projectKey=cail-backend
+sonar.projectName=CAIL Backend
+sonar.projectVersion=1.0.0
+
+# Rutas de código fuente
+sonar.sources=src
+sonar.tests=src
+sonar.test.inclusions=**/*.test.ts,**/*.spec.ts
+sonar.exclusions=**/node_modules/**,**/dist/**,**/*.test.ts,**/*.spec.ts
+
+# Configuración de TypeScript
+sonar.typescript.lcov.reportPaths=coverage/lcov.info
+
+# Encoding
+sonar.sourceEncoding=UTF-8
+
+# Calidad mínima requerida
+sonar.qualitygate.wait=true
+```
+
+#### Configuración de GitHub Actions para SonarQube
+
+```yaml
+# .github/workflows/sonarqube.yml
+name: SonarQube Analysis
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  sonarqube:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Necesario para análisis de SonarQube
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./backend
+      
+      - name: Run tests with coverage
+        run: npm run test -- --coverage --coverageReporters=lcov
+        working-directory: ./backend
+      
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@master
+        with:
+          projectBaseDir: ./backend
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      
+      - name: SonarQube Quality Gate check
+        uses: SonarSource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+```
+
+### 9.3 Quality Gate (Criterios de Calidad Mínimos)
+
+| Métrica | Umbral Mínimo | Descripción |
+|---------|---------------|-------------|
+| **Bugs** | 0 | Ningún bug nuevo permitido |
+| **Vulnerabilidades** | 0 | Ninguna vulnerabilidad nueva |
+| **Code Smells** | Grado A | Código limpio y mantenible |
+| **Cobertura de Tests** | ≥ 80% | Código probado |
+| **Duplicación** | < 3% | Evitar código repetido |
+| **Security Hotspots** | Revisados | Puntos sensibles verificados |
+
+### 9.4 Reglas de Seguridad Críticas de SonarQube
+
+| Regla | ID | Descripción | Ejemplo |
+|-------|-----|-------------|---------|
+| No hardcodear passwords | S2068 | Detecta contraseñas en código | `const pass = "123456"` |
+| No SQL Injection | S3649 | Detecta queries concatenadas | `query("SELECT * WHERE id=" + id)` |
+| No XSS | S5131 | Detecta outputs sin sanitizar | `res.send(userInput)` |
+| No exposición de errores | S4507 | Debug info en producción | `console.log(error.stack)` |
+| HTTPS obligatorio | S5332 | URLs con http:// | `fetch("http://api.com")` |
+| Crypto seguro | S4426 | Algoritmos débiles | `crypto.createHash('md5')` |
+
+### 9.5 Cómo Ejecutar SonarQube Localmente
+
+```bash
+# 1. Instalar SonarQube Scanner
+npm install -g sonar-scanner
+
+# 2. Ejecutar tests con cobertura
+npm run test -- --coverage
+
+# 3. Ejecutar análisis
+sonar-scanner \
+  -Dsonar.projectKey=cail-backend \
+  -Dsonar.sources=src \
+  -Dsonar.host.url=http://localhost:9000 \
+  -Dsonar.token=YOUR_TOKEN
+
+# 4. Ver resultados en http://localhost:9000
+```
+
+### 9.6 Interpretación de Resultados
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    EJEMPLO DE REPORTE SONARQUBE                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Quality Gate: ❌ FAILED                                                    │
+│                                                                             │
+│  ├── Bugs: 2 (Nuevo: 1) ⚠️                                                 │
+│  │   └── auth.controller.ts:45 - Posible null pointer                      │
+│  │                                                                          │
+│  ├── Vulnerabilities: 1 ❌                                                  │
+│  │   └── user.service.ts:23 - Hardcoded credential detected                │
+│  │                                                                          │
+│  ├── Security Hotspots: 3 (Review: 2) 🔍                                   │
+│  │   ├── jwt.util.ts:12 - Crypto algorithm review needed                   │
+│  │   └── login.ts:56 - Authentication review needed                        │
+│  │                                                                          │
+│  ├── Code Smells: 8 (Debt: 2h)                                             │
+│  │   └── Funciones muy largas, código duplicado...                         │
+│  │                                                                          │
+│  ├── Coverage: 72% ⚠️ (Mínimo: 80%)                                        │
+│  │                                                                          │
+│  └── Duplications: 2.1% ✅                                                  │
+│                                                                             │
+│  ACCIÓN REQUERIDA: Corregir vulnerabilidad y aumentar cobertura            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 10. Plan de Testing y Pruebas de Seguridad
+
+### 10.1 Tipos de Pruebas Requeridas
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      PIRÁMIDE DE TESTING CAIL                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│                          ┌─────────────┐                                    │
+│                          │   E2E       │  ← 10%                             │
+│                          │  (Cypress)  │  Flujos completos                  │
+│                        ┌─┴─────────────┴─┐                                  │
+│                        │  Integración    │  ← 20%                           │
+│                        │  (Supertest)    │  APIs, DB                        │
+│                      ┌─┴─────────────────┴─┐                                │
+│                      │      Unitarias      │  ← 70%                         │
+│                      │       (Jest)        │  Lógica, funciones             │
+│                      └─────────────────────┘                                │
+│                                                                             │
+│              +─────────────────────────────────────+                        │
+│              │    PRUEBAS DE SEGURIDAD (SAST)      │                        │
+│              │    SonarQube en cada capa           │                        │
+│              +─────────────────────────────────────+                        │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 10.2 Configuración de Jest para Testing
+
+#### Crear `jest.config.js` en backend
+
+```javascript
+// jest.config.js
+module.exports = {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  roots: ['<rootDir>/src'],
+  testMatch: [
+    '**/__tests__/**/*.ts',
+    '**/*.test.ts',
+    '**/*.spec.ts'
+  ],
+  collectCoverageFrom: [
+    'src/**/*.ts',
+    '!src/**/*.d.ts',
+    '!src/**/index.ts',
+    '!src/**/*.test.ts',
+    '!src/**/*.spec.ts'
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80
+    }
+  },
+  coverageReporters: ['text', 'lcov', 'html'],
+  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1'
+  }
+};
+```
+
+### 10.3 Estructura de Tests Requerida
+
+```
+src/
+├── __tests__/
+│   ├── setup.ts                    # Configuración global de tests
+│   ├── unit/
+│   │   ├── auth/
+│   │   │   ├── register.test.ts    # Tests de registro
+│   │   │   ├── login.test.ts       # Tests de login
+│   │   │   └── jwt.test.ts         # Tests de JWT
+│   │   ├── users/
+│   │   │   ├── profile.test.ts
+│   │   │   └── validation.test.ts
+│   │   ├── offers/
+│   │   │   ├── create.test.ts
+│   │   │   ├── search.test.ts
+│   │   │   └── validation.test.ts
+│   │   └── matching/
+│   │       ├── postulacion.test.ts
+│   │       └── algorithm.test.ts
+│   ├── integration/
+│   │   ├── auth.integration.test.ts
+│   │   ├── users.integration.test.ts
+│   │   └── offers.integration.test.ts
+│   └── security/
+│       ├── injection.test.ts       # Tests de inyección
+│       ├── auth-bypass.test.ts     # Tests de bypass de auth
+│       └── rate-limit.test.ts      # Tests de rate limiting
+```
+
+### 10.4 Tests de Seguridad Obligatorios
+
+#### Tests de Autenticación
+
+```typescript
+// src/__tests__/security/auth-bypass.test.ts
+import request from 'supertest';
+import app from '../../index';
+
+describe('Security: Authentication Bypass Tests', () => {
+  
+  describe('Rutas protegidas sin token', () => {
+    it('GET /api/v1/users/profile debe retornar 401 sin token', async () => {
+      const response = await request(app)
+        .get('/api/v1/users/profile');
+      
+      expect(response.status).toBe(401);
+      expect(response.body.message).not.toContain('stack'); // No exponer stack
+    });
+
+    it('POST /api/v1/offers debe retornar 401 sin token', async () => {
+      const response = await request(app)
+        .post('/api/v1/offers')
+        .send({ titulo: 'Test' });
+      
+      expect(response.status).toBe(401);
+    });
+  });
+
+  describe('Tokens inválidos', () => {
+    it('debe rechazar token malformado', async () => {
+      const response = await request(app)
+        .get('/api/v1/users/profile')
+        .set('Authorization', 'Bearer invalid-token-here');
+      
+      expect(response.status).toBe(401);
+    });
+
+    it('debe rechazar token expirado', async () => {
+      const expiredToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiIxMjMiLCJleHAiOjE1MDAwMDAwMDB9.xxx';
+      const response = await request(app)
+        .get('/api/v1/users/profile')
+        .set('Authorization', `Bearer ${expiredToken}`);
+      
+      expect(response.status).toBe(401);
+    });
+  });
+
+  describe('Autorización por rol', () => {
+    it('postulante NO debe poder crear ofertas', async () => {
+      const postulanteToken = await getTokenForRole('postulante');
+      const response = await request(app)
+        .post('/api/v1/offers')
+        .set('Authorization', `Bearer ${postulanteToken}`)
+        .send({ titulo: 'Oferta Test' });
+      
+      expect(response.status).toBe(403);
+    });
+  });
+});
+```
+
+#### Tests de Inyección
+
+```typescript
+// src/__tests__/security/injection.test.ts
+describe('Security: Injection Tests', () => {
+  
+  describe('SQL/NoSQL Injection', () => {
+    const injectionPayloads = [
+      "'; DROP TABLE users; --",
+      '{"$gt": ""}',
+      '{"$where": "sleep(5000)"}',
+      '<script>alert("xss")</script>',
+      '{{7*7}}',  // Template injection
+    ];
+
+    injectionPayloads.forEach(payload => {
+      it(`debe sanitizar payload: ${payload.substring(0, 20)}...`, async () => {
+        const response = await request(app)
+          .post('/api/v1/auth/register')
+          .send({
+            email: payload,
+            password: 'ValidPass123!',
+            nombreCompleto: payload
+          });
+        
+        // No debe causar error 500 (inyección exitosa)
+        expect(response.status).not.toBe(500);
+        // Debe ser error de validación
+        expect([400, 409, 422]).toContain(response.status);
+      });
+    });
+  });
+
+  describe('XSS Prevention', () => {
+    it('debe sanitizar HTML en descripción de oferta', async () => {
+      const token = await getTokenForRole('reclutador');
+      const response = await request(app)
+        .post('/api/v1/offers')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          titulo: 'Desarrollador',
+          descripcion: '<script>alert("xss")</script>Descripción normal'
+        });
+      
+      // El script debe ser removido
+      expect(response.body.descripcion).not.toContain('<script>');
+    });
+  });
+});
+```
+
+#### Tests de Rate Limiting
+
+```typescript
+// src/__tests__/security/rate-limit.test.ts
+describe('Security: Rate Limiting Tests', () => {
+  
+  it('debe bloquear después de 5 intentos de login fallidos', async () => {
+    const email = 'test@example.com';
+    
+    // 5 intentos fallidos
+    for (let i = 0; i < 5; i++) {
+      await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email, password: 'wrongpassword' });
+    }
+    
+    // El 6to intento debe ser bloqueado
+    const response = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email, password: 'wrongpassword' });
+    
+    expect(response.status).toBe(429);
+    expect(response.body.message).toContain('demasiados intentos');
+  });
+
+  it('debe limitar requests por IP', async () => {
+    const requests = [];
+    
+    // Hacer 101 requests rápidamente
+    for (let i = 0; i < 101; i++) {
+      requests.push(request(app).get('/health'));
+    }
+    
+    const responses = await Promise.all(requests);
+    const blocked = responses.filter(r => r.status === 429);
+    
+    expect(blocked.length).toBeGreaterThan(0);
+  });
+});
+```
+
+### 10.5 Responsabilidades de Testing por Rol
+
+| Rol | Tipo de Test | Responsabilidad |
+|-----|--------------|-----------------|
+| **Cada Desarrollador** | Unitarios | Tests de su propio código (>80% cobertura) |
+| **Erick Gaona (Seguridad)** | Seguridad | Tests de inyección, auth bypass, rate limit |
+| **Erick Gaona (Testing)** | Integración | Tests de APIs completas |
+| **Todo el equipo** | E2E | Colaborar en flujos principales |
+
+### 10.6 Qué Puede Hacer Erick AHORA MISMO
+
+#### Tareas Inmediatas (Sin depender de otros):
+
+| # | Tarea | Tiempo Estimado | Prioridad |
+|---|-------|-----------------|-----------|
+| 1 | Crear estructura de carpetas de tests | 30 min | ALTA |
+| 2 | Configurar `jest.config.js` | 15 min | ALTA |
+| 3 | Crear `setup.ts` para tests | 20 min | ALTA |
+| 4 | Escribir tests de seguridad base | 2 horas | ALTA |
+| 5 | Configurar `sonar-project.properties` | 15 min | MEDIA |
+| 6 | Crear GitHub Action para SonarQube | 30 min | MEDIA |
+| 7 | Escribir tests del módulo de ofertas (tu parte) | 2 horas | ALTA |
+
+#### Checklist de Erick - Tareas de Testing
+
+```markdown
+## Mi Checklist de Testing - Erick Gaona
+
+### Configuración Inicial
+- [ ] Crear `jest.config.js`
+- [ ] Crear `src/__tests__/setup.ts`
+- [ ] Crear estructura de carpetas de tests
+- [ ] Agregar scripts de test en package.json (ya existen)
+- [ ] Ejecutar `npm test` y verificar que funciona
+
+### Tests de Seguridad (Puedo hacer ahora)
+- [ ] Crear `src/__tests__/security/auth-bypass.test.ts`
+- [ ] Crear `src/__tests__/security/injection.test.ts`
+- [ ] Crear `src/__tests__/security/rate-limit.test.ts`
+- [ ] Tests de que errores no exponen stack traces
+- [ ] Tests de validación de inputs
+
+### Tests de mi módulo (Ofertas)
+- [ ] Crear `src/__tests__/unit/offers/create.test.ts`
+- [ ] Crear `src/__tests__/unit/offers/search.test.ts`
+- [ ] Crear `src/__tests__/unit/offers/validation.test.ts`
+- [ ] Verificar cobertura > 80%
+
+### SonarQube
+- [ ] Crear `sonar-project.properties`
+- [ ] Configurar GitHub Action
+- [ ] Ejecutar primer análisis
+- [ ] Documentar resultados
+```
+
+### 10.7 Scripts de NPM para Testing
+
+Agregar al `package.json`:
+
+```json
+{
+  "scripts": {
+    "test": "jest --coverage",
+    "test:watch": "jest --watch",
+    "test:security": "jest --testPathPattern=security",
+    "test:unit": "jest --testPathPattern=unit",
+    "test:integration": "jest --testPathPattern=integration",
+    "test:coverage": "jest --coverage --coverageReporters=lcov",
+    "sonar": "sonar-scanner"
+  }
+}
+```
+
+---
+
 ## Contacto
 
-**Responsable de Seguridad:** Erick Gaona  
+**Responsable de Seguridad y Testing:** Erick Gaona  
 **Email:** eogaona@utpl.edu.ec
 
-**⚠️ En caso de dudas sobre seguridad, consultar ANTES de implementar.**
+**⚠️ En caso de dudas sobre seguridad o testing, consultar ANTES de implementar.**
 
 ---
 
 *Documento actualizado: Enero 2026*  
-*Versión: 2.0*
+*Versión: 3.0*
 

@@ -3,6 +3,7 @@ import { Alert, StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput 
 import { Feather } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { InputField } from '@/components/ui/InputField';
+import { LoadingSplash } from '@/components/ui/LoadingSplash';
 import { authService } from '@/services/auth.service';
 
 interface RegisterCandidateFormProps {
@@ -41,6 +42,12 @@ export function RegisterCandidateForm({ onSuccess, onBack, onSwitchToLogin }: Re
   const [yearsExperience, setYearsExperience] = useState('');
   const [experienceSummary, setExperienceSummary] = useState('');
 
+  // Loading states
+  const [loading, setLoading] = useState(false);
+  const [showSplash, setShowSplash] = useState(false);
+  const [splashSuccess, setSplashSuccess] = useState(false);
+  const [pendingData, setPendingData] = useState<any>(null);
+
   const handleSubmit = async () => {
     if (activeTab === 'personal') {
       if (!fullName || !cedula || !email || !password || !confirmPassword) {
@@ -54,6 +61,9 @@ export function RegisterCandidateForm({ onSuccess, onBack, onSwitchToLogin }: Re
       setActiveTab('profesional');
       return;
     }
+
+    setLoading(true);
+    setShowSplash(true);
 
     try {
       const response = await authService.register({
@@ -77,14 +87,27 @@ export function RegisterCandidateForm({ onSuccess, onBack, onSwitchToLogin }: Re
         },
       });
 
-      onSuccess({
+      setPendingData({
         id: response.idCuenta,
         name: response.nombreCompleto,
         email: response.email,
         progress: 0.4,
       });
+      setSplashSuccess(true);
     } catch (error: any) {
+      setShowSplash(false);
+      setSplashSuccess(false);
+      setLoading(false);
       Alert.alert('Error', error.message || 'Error al crear la cuenta');
+    }
+  };
+
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+    setSplashSuccess(false);
+    setLoading(false);
+    if (pendingData) {
+      onSuccess(pendingData);
     }
   };
 
@@ -509,13 +532,18 @@ export function RegisterCandidateForm({ onSuccess, onBack, onSwitchToLogin }: Re
         <View style={styles.actions}>
           <TouchableOpacity
             onPress={handleSubmit}
-            style={styles.submitButton}
+            style={[styles.submitButton, loading && styles.submitButtonDisabled]}
             activeOpacity={0.8}
+            disabled={loading}
           >
             <Text style={styles.submitText}>
-              {activeTab === 'personal' ? 'Continuar' : 'Crear cuenta'}
+              {loading
+                ? 'Registrando...'
+                : activeTab === 'personal'
+                  ? 'Continuar'
+                  : 'Crear cuenta'}
             </Text>
-            <Feather name="arrow-right" size={20} color="#FFFFFF" />
+            {!loading && <Feather name="arrow-right" size={20} color="#FFFFFF" />}
           </TouchableOpacity>
 
           <View style={styles.loginRow}>
@@ -526,6 +554,15 @@ export function RegisterCandidateForm({ onSuccess, onBack, onSwitchToLogin }: Re
           </View>
         </View>
       </View>
+
+      {/* Loading Splash */}
+      <LoadingSplash
+        visible={showSplash}
+        message="Registrando cuenta..."
+        variant="candidate"
+        showSuccess={splashSuccess}
+        onSuccessComplete={handleSplashComplete}
+      />
     </View>
   );
 }
@@ -832,6 +869,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+  },
+  submitButtonDisabled: {
+    opacity: 0.7,
   },
   submitText: {
     color: '#FFFFFF',

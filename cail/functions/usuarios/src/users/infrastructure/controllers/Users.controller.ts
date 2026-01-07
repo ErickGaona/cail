@@ -41,26 +41,39 @@ export const updateProfile = asyncHandler(async (req: AuthRequest, res: Response
     }
 
     // Actualizar campos permitidos
-    if (req.body.nombreCompleto) {
-        account.nombreCompleto = req.body.nombreCompleto;
+    const reqAny = req as any;
+    console.log(`👤 Updating profile for user: ${userId}`);
+
+    if (reqAny.body.nombreCompleto) {
+        console.log(`   - Name update: ${reqAny.body.nombreCompleto}`);
+        account.nombreCompleto = reqAny.body.nombreCompleto;
     }
-    if (req.body.telefono) {
-        account.telefono = req.body.telefono;
+    if (reqAny.body.telefono) {
+        console.log(`   - Phone update: ${reqAny.body.telefono}`);
+        account.telefono = reqAny.body.telefono;
     }
-    if (req.body.candidateProfile) {
+    if (reqAny.body.candidateProfile) {
+        console.log(`   - Candidate Profile update:`, JSON.stringify(reqAny.body.candidateProfile));
         account.candidateProfile = {
-            ...account.candidateProfile,
-            ...req.body.candidateProfile
+            ...(account.candidateProfile || {}),
+            ...reqAny.body.candidateProfile
         };
     }
-    if (req.body.employerProfile) {
+    if (reqAny.body.employerProfile) {
+        console.log(`   - Employer Profile update:`, JSON.stringify(reqAny.body.employerProfile));
         account.employerProfile = {
-            ...account.employerProfile,
-            ...req.body.employerProfile
+            ...(account.employerProfile || {}),
+            ...reqAny.body.employerProfile
         };
     }
 
-    await accountRepository.save(account);
+    try {
+        await accountRepository.save(account);
+        console.log(`✅ Profile saved successfully in Firestore`);
+    } catch (error) {
+        console.error(`❌ Error saving profile in Firestore:`, error);
+        throw error;
+    }
 
     return ApiResponse.success(res, account.toJSON(), 'Profile updated successfully');
 });
@@ -70,7 +83,7 @@ export const updateProfile = asyncHandler(async (req: AuthRequest, res: Response
  * Obtiene un usuario por ID (para comunicación entre servicios)
  */
 export const getUserById = asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { id } = req.params;
+    const { id } = (req as any).params;
 
     const account = await accountRepository.findById(new UserId(id));
     if (!account) {

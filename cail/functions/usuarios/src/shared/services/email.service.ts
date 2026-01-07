@@ -9,6 +9,19 @@ class EmailService {
     private resend: Resend | null = null;
     private isDevelopment: boolean;
 
+    // Colores corporativos CAIL
+    private readonly brandColors = {
+        primary: '#2563eb',      // Azul principal
+        primaryDark: '#1d4ed8',  // Azul oscuro
+        secondary: '#0f172a',    // Negro/gris oscuro
+        background: '#f8fafc',   // Gris claro de fondo
+        white: '#ffffff',
+        textPrimary: '#1e293b',
+        textSecondary: '#64748b',
+        success: '#10b981',
+        warning: '#f59e0b',
+    };
+
     constructor() {
         this.isDevelopment = config.nodeEnv === 'development';
 
@@ -21,19 +34,105 @@ class EmailService {
     }
 
     /**
+     * Genera el template base del email con estilos profesionales
+     */
+    private getBaseTemplate(content: string): string {
+        return `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAIL</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: ${this.brandColors.background};">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+                <table role="presentation" style="max-width: 600px; width: 100%; background-color: ${this.brandColors.white}; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: hidden;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, ${this.brandColors.primary} 0%, ${this.brandColors.primaryDark} 100%); padding: 32px 40px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 32px; font-weight: 700; color: ${this.brandColors.white}; letter-spacing: -0.5px;">CAIL</h1>
+                            <p style="margin: 8px 0 0 0; font-size: 14px; color: rgba(255,255,255,0.85); font-weight: 400;">Sistema de Reclutamiento Inteligente</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            ${content}
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: ${this.brandColors.background}; padding: 24px 40px; border-top: 1px solid #e2e8f0;">
+                            <p style="margin: 0 0 8px 0; font-size: 12px; color: ${this.brandColors.textSecondary}; text-align: center;">
+                                Este es un correo automático, por favor no responda a este mensaje.
+                            </p>
+                            <p style="margin: 0; font-size: 12px; color: ${this.brandColors.textSecondary}; text-align: center;">
+                                © ${new Date().getFullYear()} CAIL - Todos los derechos reservados
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+    }
+
+    /**
      * Envía email con contraseña temporal a empleadores
      */
     async sendTemporaryPassword(email: string, password: string, name: string): Promise<void> {
+        const content = `
+            <h2 style="margin: 0 0 16px 0; font-size: 24px; font-weight: 600; color: ${this.brandColors.textPrimary};">
+                ¡Hola ${name}! 👋
+            </h2>
+            <p style="margin: 0 0 24px 0; font-size: 16px; line-height: 1.6; color: ${this.brandColors.textSecondary};">
+                Te damos la bienvenida a <strong style="color: ${this.brandColors.primary};">CAIL</strong>. Tu cuenta de empleador ha sido creada satisfactoriamente.
+            </p>
+            
+            <!-- Password Box -->
+            <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; padding: 24px; margin: 24px 0; border-left: 4px solid ${this.brandColors.warning};">
+                <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: ${this.brandColors.secondary}; text-transform: uppercase; letter-spacing: 0.5px;">
+                    🔐 Tu contraseña temporal
+                </p>
+                <p style="margin: 0; font-size: 28px; font-weight: 700; color: ${this.brandColors.secondary}; font-family: 'Courier New', monospace; letter-spacing: 2px;">
+                    ${password}
+                </p>
+            </div>
+            
+            <!-- Warning -->
+            <div style="background-color: #fef2f2; border-radius: 8px; padding: 16px; margin: 24px 0;">
+                <p style="margin: 0; font-size: 14px; color: #991b1b;">
+                    ⚠️ <strong>Importante:</strong> Por seguridad, deberás cambiar esta contraseña después de iniciar sesión por primera vez.
+                </p>
+            </div>
+            
+            <!-- CTA Button -->
+            <div style="text-align: center; margin: 32px 0;">
+                <p style="margin: 0 0 16px 0; font-size: 14px; color: ${this.brandColors.textSecondary};">
+                    ¿Listo para empezar?
+                </p>
+                <a href="#" style="display: inline-block; background: linear-gradient(135deg, ${this.brandColors.primary} 0%, ${this.brandColors.primaryDark} 100%); color: ${this.brandColors.white}; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.4);">
+                    Iniciar Sesión
+                </a>
+            </div>
+            
+            <p style="margin: 24px 0 0 0; font-size: 14px; color: ${this.brandColors.textSecondary}; text-align: center;">
+                Si no solicitaste esta cuenta, puedes ignorar este correo.
+            </p>
+        `;
+
         const emailData = {
             from: 'CAIL <onboarding@resend.dev>',
             to: email,
-            subject: 'Tu contraseña temporal de CAIL',
-            html: `
-                <h1>Hola ${name},</h1>
-                <p>Te damos la bienvenida a CAIL. Tu cuenta de empleador ha sido creada satisfatoriamente.</p>
-                <p>Tu contraseña temporal es: <strong>${password}</strong></p>
-                <p>Por favor, cámbiala después de iniciar sesión por primera vez.</p>
-            `,
+            subject: '🔐 Tu contraseña temporal de CAIL',
+            html: this.getBaseTemplate(content),
         };
 
         if (this.resend) {
@@ -51,15 +150,56 @@ class EmailService {
      * Envía email de bienvenida a nuevos usuarios
      */
     async sendWelcomeEmail(email: string, name: string): Promise<void> {
+        const content = `
+            <div style="text-align: center; margin-bottom: 24px;">
+                <span style="font-size: 48px;">🎉</span>
+            </div>
+            
+            <h2 style="margin: 0 0 16px 0; font-size: 24px; font-weight: 600; color: ${this.brandColors.textPrimary}; text-align: center;">
+                ¡Bienvenido ${name}!
+            </h2>
+            
+            <p style="margin: 0 0 24px 0; font-size: 16px; line-height: 1.6; color: ${this.brandColors.textSecondary}; text-align: center;">
+                Tu cuenta en <strong style="color: ${this.brandColors.primary};">CAIL</strong> ha sido creada exitosamente. Ya eres parte de nuestra comunidad de profesionales.
+            </p>
+            
+            <!-- Features -->
+            <div style="background-color: ${this.brandColors.background}; border-radius: 12px; padding: 24px; margin: 24px 0;">
+                <p style="margin: 0 0 16px 0; font-size: 14px; font-weight: 600; color: ${this.brandColors.textPrimary};">
+                    ✨ Con CAIL podrás:
+                </p>
+                <ul style="margin: 0; padding-left: 20px; color: ${this.brandColors.textSecondary}; font-size: 14px; line-height: 2;">
+                    <li>Explorar ofertas laborales que coincidan con tu perfil</li>
+                    <li>Recibir recomendaciones personalizadas</li>
+                    <li>Aplicar a posiciones con un solo clic</li>
+                    <li>Seguir el estado de tus postulaciones</li>
+                </ul>
+            </div>
+            
+            <!-- Success Badge -->
+            <div style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-radius: 8px; padding: 16px; margin: 24px 0; text-align: center;">
+                <p style="margin: 0; font-size: 14px; color: #065f46;">
+                    ✅ Tu cuenta está activa y lista para usar
+                </p>
+            </div>
+            
+            <!-- CTA Button -->
+            <div style="text-align: center; margin: 32px 0;">
+                <a href="#" style="display: inline-block; background: linear-gradient(135deg, ${this.brandColors.primary} 0%, ${this.brandColors.primaryDark} 100%); color: ${this.brandColors.white}; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.4);">
+                    Explorar Ofertas
+                </a>
+            </div>
+            
+            <p style="margin: 24px 0 0 0; font-size: 14px; color: ${this.brandColors.textSecondary}; text-align: center;">
+                ¿Tienes preguntas? Estamos aquí para ayudarte.
+            </p>
+        `;
+
         const emailData = {
             from: 'CAIL <onboarding@resend.dev>',
             to: email,
-            subject: 'Bienvenido a CAIL',
-            html: `
-                <h1>¡Bienvenido ${name}!</h1>
-                <p>Tu cuenta en CAIL ha sido creada exitosamente.</p>
-                <p>Ya puedes comenzar a explorar oportunidades laborales.</p>
-            `,
+            subject: '🎉 ¡Bienvenido a CAIL!',
+            html: this.getBaseTemplate(content),
         };
 
         if (this.resend) {

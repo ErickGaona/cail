@@ -3,6 +3,7 @@ import { Alert, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { InputField } from '@/components/ui/InputField';
+import { LoadingSplash } from '@/components/ui/LoadingSplash';
 import { UserRole } from '@/types';
 import { authService } from '@/services/auth.service';
 
@@ -18,6 +19,9 @@ export function LoginForm({ role, onSuccess, onBack, onSwitchToRegister }: Login
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showSplash, setShowSplash] = useState(false);
+  const [splashSuccess, setSplashSuccess] = useState(false);
+  const [pendingData, setPendingData] = useState<any>(null);
 
   const handleSubmit = async () => {
     if (!email || !password) {
@@ -26,31 +30,43 @@ export function LoginForm({ role, onSuccess, onBack, onSwitchToRegister }: Login
     }
 
     setLoading(true);
+    setShowSplash(true);
 
     try {
       const response = await authService.login(email, password);
 
-      if (role === 'candidate') {
-        onSuccess({
+      const userData = role === 'candidate'
+        ? {
           id: response.idCuenta,
           name: response.nombreCompleto,
           email: response.email,
           progress: 0.5,
-        });
-      } else {
-        onSuccess({
+        }
+        : {
           id: response.idCuenta,
           company: 'Empresa',
           contactName: response.nombreCompleto,
           email: response.email,
           needsPasswordChange: false,
           isEmailVerified: true,
-        });
-      }
+        };
+
+      setPendingData(userData);
+      setSplashSuccess(true);
     } catch (error: any) {
+      setShowSplash(false);
+      setSplashSuccess(false);
       Alert.alert('Error', error.message || 'Error al iniciar sesión');
-    } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+    setSplashSuccess(false);
+    setLoading(false);
+    if (pendingData) {
+      onSuccess(pendingData);
     }
   };
 
@@ -184,6 +200,15 @@ export function LoginForm({ role, onSuccess, onBack, onSwitchToRegister }: Login
           Al continuar, aceptas los términos y condiciones de uso
         </Text>
       </View>
+
+      {/* Loading Splash */}
+      <LoadingSplash
+        visible={showSplash}
+        message="Iniciando sesión..."
+        variant={role}
+        showSuccess={splashSuccess}
+        onSuccessComplete={handleSplashComplete}
+      />
     </View>
   );
 }

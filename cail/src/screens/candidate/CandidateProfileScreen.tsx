@@ -20,6 +20,7 @@ export function CandidateProfileScreen() {
   const [newSoftSkill, setNewSoftSkill] = useState('');
   const [newCompetency, setNewCompetency] = useState('');
   const [activeTab, setActiveTab] = useState<'personal' | 'professional' | 'experience'>('personal');
+  const [saving, setSaving] = useState(false);
 
   // Load user profile data
   useEffect(() => {
@@ -82,6 +83,7 @@ export function CandidateProfileScreen() {
   };
 
   const handleSave = async () => {
+    setSaving(true);
     try {
       await userService.updateProfile({
         nombreCompleto: form.fullName,
@@ -98,6 +100,8 @@ export function CandidateProfileScreen() {
       Alert.alert('Éxito', 'Tus cambios se guardaron correctamente.');
     } catch (error: any) {
       Alert.alert('Error', error.message || 'No se pudieron guardar los cambios');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -199,7 +203,7 @@ export function CandidateProfileScreen() {
             <InputField
               label="Correo electrónico"
               value={form.email}
-              onChangeText={(text) => updateField('email', text)}
+              readonly
               autoCapitalize="none"
               keyboardType="email-address"
             />
@@ -437,9 +441,11 @@ export function CandidateProfileScreen() {
 
       {/* Save Button */}
       <Button
-        label="Guardar cambios"
+        label={saving ? 'Guardando...' : 'Guardar cambios'}
         onPress={handleSave}
         style={[styles.saveButton, { maxWidth: contentWidth }]}
+        loading={saving}
+        disabled={saving}
       />
     </ScrollView>
   );

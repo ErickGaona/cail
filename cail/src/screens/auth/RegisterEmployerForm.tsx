@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, View, TouchableOpacity, TextInput, Modal, ScrollView } from 'react-native';
+import { Alert, StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, ActivityIndicator } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { authService } from '@/services/auth.service';
 
@@ -147,8 +147,8 @@ export function RegisterEmployerForm({ onSuccess, onBack, onSwitchToLogin }: Reg
   const [correo, setCorreo] = useState('');
 
   const [showDropdown, setShowDropdown] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // Filtrar empresas según lo que el usuario escribe
   const empresasFiltradas = empresasDB.filter(empresa =>
@@ -172,6 +172,8 @@ export function RegisterEmployerForm({ onSuccess, onBack, onSwitchToLogin }: Reg
       return;
     }
 
+    setLoading(true);
+
     try {
       const response = await authService.register({
         email: correo,
@@ -186,22 +188,19 @@ export function RegisterEmployerForm({ onSuccess, onBack, onSwitchToLogin }: Reg
         },
       });
 
-      // Show success modal
-      setShowSuccessModal(true);
-
-      // After 2 seconds, redirect
-      setTimeout(() => {
-        setShowSuccessModal(false);
-        onSuccess({
-          id: response.idCuenta,
-          company: empresaNombre,
-          contactName: contacto,
-          email: correo,
-          needsPasswordChange: true,
-          isEmailVerified: false,
-        });
-      }, 2000);
+      // Go directly to password change screen with success info
+      setLoading(false);
+      onSuccess({
+        id: response.idCuenta,
+        company: empresaNombre,
+        contactName: contacto,
+        email: correo,
+        needsPasswordChange: true,
+        isEmailVerified: false,
+        showWelcomeModal: true, // Flag to show modal on ChangePasswordScreen
+      });
     } catch (error: any) {
+      setLoading(false);
       Alert.alert('Error', error.message || 'Error al crear la cuenta');
     }
   };
@@ -372,11 +371,18 @@ export function RegisterEmployerForm({ onSuccess, onBack, onSwitchToLogin }: Reg
         <View style={styles.actions}>
           <TouchableOpacity
             onPress={handleSubmit}
-            style={styles.submitButton}
+            style={[styles.submitButton, loading && styles.submitButtonDisabled]}
             activeOpacity={0.8}
+            disabled={loading}
           >
-            <Text style={styles.submitText}>Registrar empresa</Text>
-            <Feather name="arrow-right" size={20} color="#FFFFFF" />
+            <Text style={styles.submitText}>
+              {loading ? 'Registrando...' : 'Registrar empresa'}
+            </Text>
+            {loading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Feather name="arrow-right" size={20} color="#FFFFFF" />
+            )}
           </TouchableOpacity>
 
           <View style={styles.loginRow}>
@@ -387,47 +393,6 @@ export function RegisterEmployerForm({ onSuccess, onBack, onSwitchToLogin }: Reg
           </View>
         </View>
       </View>
-
-      {/* Modal de éxito */}
-      <Modal
-        visible={showSuccessModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowSuccessModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <TouchableOpacity
-              style={styles.modalClose}
-              onPress={() => setShowSuccessModal(false)}
-            >
-              <Feather name="x" size={20} color="#6B7280" />
-            </TouchableOpacity>
-
-            <View style={styles.successIcon}>
-              <Feather name="check" size={40} color="#fff" />
-            </View>
-
-            <Text style={styles.modalTitle}>¡Registro Exitoso!</Text>
-
-            <View style={styles.successBadge}>
-              <Feather name="check-square" size={16} color="#059669" />
-              <Text style={styles.successText}>Empresa registrada con éxito</Text>
-            </View>
-
-            <Text style={styles.modalEmpresa}>{empresaSeleccionada}</Text>
-
-            <View style={styles.modalInfoBox}>
-              <Feather name="mail" size={16} color="#3B82F6" />
-              <Text style={styles.modalInfoText}>
-                Recibirás un correo con tus credenciales de acceso una vez que tu empresa sea validada por CAIL.
-              </Text>
-            </View>
-
-            <Text style={styles.modalRedirect}>Redirigiendo...</Text>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -647,6 +612,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+  },
+  submitButtonDisabled: {
+    opacity: 0.7,
   },
   submitText: {
     color: '#FFFFFF',

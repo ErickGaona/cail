@@ -14,6 +14,7 @@ export function EmployerProfileScreen() {
   const { isDesktop, contentWidth, horizontalGutter } = useResponsiveLayout();
   const [form, setForm] = useState<EmployerProfileForm>(initialEmployerProfile);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -25,15 +26,15 @@ export function EmployerProfileScreen() {
 
       if (profile.employerProfile) {
         setForm({
-          companyName: profile.employerProfile.nombreEmpresa,
-          contactName: profile.employerProfile.nombreContacto,
+          companyName: profile.employerProfile.nombreEmpresa || '',
+          contactName: profile.employerProfile.nombreContacto || '',
           email: profile.email,
           phone: profile.telefono || '',
-          industry: '',
-          numberOfEmployees: '',
-          description: '',
-          website: '',
-          address: '',
+          industry: profile.employerProfile.industry || '',
+          numberOfEmployees: profile.employerProfile.numberOfEmployees || '',
+          description: profile.employerProfile.description || '',
+          website: profile.employerProfile.website || '',
+          address: profile.employerProfile.address || '',
         });
       }
     } catch (error: any) {
@@ -57,6 +58,7 @@ export function EmployerProfileScreen() {
   }
 
   const handleSave = async () => {
+    setSaving(true);
     try {
       await userService.updateProfile({
         nombreCompleto: form.contactName,
@@ -75,6 +77,8 @@ export function EmployerProfileScreen() {
       Alert.alert('Éxito', 'Perfil actualizado correctamente');
     } catch (error: any) {
       Alert.alert('Error', error.message || 'No se pudieron guardar los cambios');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -188,7 +192,7 @@ export function EmployerProfileScreen() {
                 tone="employer"
                 label="Correo"
                 value={form.email}
-                onChangeText={(text) => updateField('email', text)}
+                readonly
                 autoCapitalize="none"
               />
             </View>
@@ -222,7 +226,14 @@ export function EmployerProfileScreen() {
         </View>
 
         <View style={styles.actionRow}>
-          <Button label="Guardar perfil" onPress={handleSave} fullWidth tone="employer" />
+          <Button
+            label={saving ? 'Guardando...' : 'Guardar perfil'}
+            onPress={handleSave}
+            fullWidth
+            tone="employer"
+            loading={saving}
+            disabled={saving}
+          />
         </View>
       </View>
     </ScrollView>

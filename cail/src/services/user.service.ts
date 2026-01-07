@@ -1,4 +1,5 @@
 import { apiService } from './api.service';
+import { API_CONFIG } from './config';
 
 export interface UserProfile {
     idCuenta: string;

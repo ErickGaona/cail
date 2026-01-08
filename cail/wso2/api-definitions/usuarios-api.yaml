@@ -14,7 +14,7 @@ info:
     email: soporte@cail.com
 
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:8082
     description: Development server
   - url: https://usuarios-function-xxxxx.run.app
     description: Production server (Cloud Functions)

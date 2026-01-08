@@ -2,7 +2,7 @@
 ## Checklist por Contribuidor
 
 **Responsable:** Erick Gaona (Test & Security)  
-**Versión:** 6.0 | **Fecha:** 08 Enero 2026
+**Versión:** 7.0 | **Fecha:** 08 Enero 2026
 
 ---
 
@@ -10,9 +10,41 @@
 
 ```
 cail/functions/
-├── usuarios/     (Puerto 8080) → Alex Ramírez
+├── usuarios/     (Puerto 8080) → Alex Ramírez + Carlos + Juan + Sebastián
 ├── ofertas/      (Puerto 8083) → Erick Gaona  
-└── matching/     (Puerto 8084) → Juan/Dara
+└── matching/     (Puerto 8084) → Dara Van Gijsel
+```
+
+---
+
+## Resumen de Tests por Módulo
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    TESTS REQUERIDOS POR MÓDULO                              │
+│                    (Responsable de tests: Erick Gaona)                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  MÓDULO USUARIOS (Alex + Carlos + Juan + Sebastián)                         │
+│  └── Total: 33 tests                                                        │
+│      ├── Seguridad Auth:     20 tests                                       │
+│      ├── Integración Auth:    7 tests                                       │
+│      └── Perfiles:            6 tests                                       │
+│                                                                             │
+│  MÓDULO OFERTAS (Erick)                                                     │
+│  └── Total: 15 tests                                                        │
+│      ├── Seguridad:          10 tests                                       │
+│      └── Integración:         5 tests                                       │
+│                                                                             │
+│  MÓDULO MATCHING (Dara)                                                     │
+│  └── Total: 13 tests                                                        │
+│      ├── Seguridad:           6 tests                                       │
+│      └── Integración:         7 tests                                       │
+│                                                                             │
+│  ═══════════════════════════════════════════════════════════════════════    │
+│  TOTAL PROYECTO: 61 tests                                                   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -32,6 +64,22 @@ cail/functions/
 | A5 | Validación de Email | ✅ OK | Ya existe en `Email.ts` |
 | A6 | Dockerfile no-root | ✅ OK | `USER nodejs` ya existe |
 | A7 | Hash con bcrypt | ✅ OK | Ya usa bcrypt 10 rounds |
+
+### 🧪 Tests Derivados (Erick crea, Alex implementa)
+
+| Test | Verifica Estándar | Estado Test | Estado Código |
+|------|-------------------|-------------|---------------|
+| Headers X-Frame-Options presente | A1 | ⏳ Pendiente | ❌ No implementado |
+| Headers X-Content-Type-Options presente | A1 | ⏳ Pendiente | ❌ No implementado |
+| CORS rechaza origen no permitido | A2 | ⏳ Pendiente | ⚠️ Parcial |
+| Login 6to intento → 429 | A3 | ⏳ Pendiente | ❌ No implementado |
+| Login después 15min → OK | A3 | ⏳ Pendiente | ❌ No implementado |
+| Password < 12 chars → 400 | A4 | ⏳ Pendiente | ❌ No implementado |
+| Password sin mayúscula → 400 | A4 | ⏳ Pendiente | ❌ No implementado |
+| Password sin número → 400 | A4 | ⏳ Pendiente | ❌ No implementado |
+| Email inválido → 400 | A5 | ✅ Creado | ⚠️ Retorna 500 |
+
+**Total tests para Alex:** 9 tests
 
 ### Código que DEBE agregar:
 
@@ -90,6 +138,19 @@ const validatePassword = (password: string): void => {
 | C5 | No loguear tokens | ✅ OK | No se loguean |
 | C6 | WSO2 JWT Policy | ⚠️ PENDIENTE | Configurar en wso2/ |
 
+### 🧪 Tests Derivados (Erick crea, Carlos implementa)
+
+| Test | Verifica Estándar | Estado Test | Estado Código |
+|------|-------------------|-------------|---------------|
+| Token sin auth → 401 | C3 | ✅ Creado | ✅ Implementado |
+| Token malformado → 401 | C3 | ✅ Creado | ✅ Implementado |
+| Token sin Bearer → 401 | C3 | ✅ Creado | ✅ Implementado |
+| Token expirado → 401 | C4 | ✅ Creado | ✅ Implementado |
+| Algoritmo es HS256 | C1 | ⏳ Pendiente | ✅ Implementado |
+| Token expira en 7d | C2 | ⏳ Pendiente | ✅ Implementado |
+
+**Total tests para Carlos:** 6 tests (4 creados, 2 pendientes)
+
 ### Código existente (CORRECTO):
 
 ```typescript
@@ -120,6 +181,17 @@ export const authenticate = async (req, res, next) => {
 | J2 | Sanitizar datos | ⚠️ FALTA | `npm i sanitize-html` |
 | J3 | No IDs secuenciales | ✅ OK | Usa UUIDs |
 | J4 | Logs de auditoría | ⚠️ FALTA | Registrar cambios |
+
+### 🧪 Tests Derivados (Erick crea, Juan implementa)
+
+| Test | Verifica Estándar | Estado Test | Estado Código |
+|------|-------------------|-------------|---------------|
+| SQL Injection no ejecuta | J2 | ✅ Creado | ✅ Firestore escapa |
+| NoSQL Injection no ejecuta | J2 | ✅ Creado | ✅ Firestore escapa |
+| XSS sanitizado | J2 | ✅ Creado | ⚠️ Parcial |
+| IDs son UUIDs no secuenciales | J3 | ⏳ Pendiente | ✅ Implementado |
+
+**Total tests para Juan:** 4 tests (3 creados, 1 pendiente)
 
 ### Código que DEBE agregar:
 
@@ -155,6 +227,19 @@ service cloud.firestore {
 | S2 | CV máximo 5MB | ⚠️ VERIFICAR | Configurar multer |
 | S3 | Validar cédula EC | ⚠️ FALTA | Algoritmo módulo 10 |
 | S4 | No exponer cédula completa | ⚠️ FALTA | Mostrar solo 4 dígitos |
+
+### 🧪 Tests Derivados (Erick crea, Sebastián implementa)
+
+| Test | Verifica Estándar | Estado Test | Estado Código |
+|------|-------------------|-------------|---------------|
+| Upload archivo .exe → 400 | S1 | ⏳ Pendiente | ❌ No verificado |
+| Upload PDF > 5MB → 400 | S2 | ⏳ Pendiente | ❌ No verificado |
+| Cédula inválida → 400 | S3 | ⏳ Pendiente | ❌ No implementado |
+| Cédula válida → 200 | S3 | ⏳ Pendiente | ❌ No implementado |
+| Response muestra ****1234 | S4 | ⏳ Pendiente | ❌ No implementado |
+| GET /profile no expone cédula completa | S4 | ⏳ Pendiente | ❌ No implementado |
+
+**Total tests para Sebastián:** 6 tests (0 creados)
 
 ### Código que DEBE agregar:
 
@@ -192,6 +277,23 @@ const validarCedulaEC = (cedula: string): boolean => {
 | E3 | Validar inputs | ⚠️ FALTA | `npm i express-validator` |
 | E4 | Sanitizar descripción | ⚠️ FALTA | `npm i sanitize-html` |
 | E5 | Paginación con límite | ⚠️ FALTA | Máximo 50 resultados |
+
+### 🧪 Tests Derivados (Erick crea Y implementa)
+
+| Test | Verifica Estándar | Estado Test | Estado Código |
+|------|-------------------|-------------|---------------|
+| POST /offers sin token → 401 | E1 | ⏳ Pendiente | ✅ Implementado |
+| POST /offers como POSTULANTE → 403 | E1 | ⏳ Pendiente | ✅ Implementado |
+| PUT /offers sin ser dueño → 403 | E2 | ⏳ Pendiente | ✅ Implementado |
+| DELETE /offers sin ser dueño → 403 | E2 | ⏳ Pendiente | ✅ Implementado |
+| Título < 5 chars → 400 | E3 | ⏳ Pendiente | ❌ No implementado |
+| Descripción < 50 chars → 400 | E3 | ⏳ Pendiente | ❌ No implementado |
+| Salario negativo → 400 | E3 | ⏳ Pendiente | ❌ No implementado |
+| XSS en descripción sanitizado | E4 | ⏳ Pendiente | ❌ No implementado |
+| GET /offers?limit=100 → máx 50 | E5 | ⏳ Pendiente | ❌ No implementado |
+| SQL Injection en búsqueda | General | ⏳ Pendiente | ✅ Firestore |
+
+**Total tests para Erick (Ofertas):** 10 tests (0 creados)
 
 ### Código que DEBO agregar:
 
@@ -243,6 +345,20 @@ export const buscarOfertasValidator = [
 | D4 | Solo ofertas activas | ⚠️ VERIFICAR | Validar estado |
 | D5 | No exponer algoritmo | ✅ OK | Solo retorna score |
 
+### 🧪 Tests Derivados (Erick crea, Dara implementa)
+
+| Test | Verifica Estándar | Estado Test | Estado Código |
+|------|-------------------|-------------|---------------|
+| POST /apply sin token → 401 | D1 | ⏳ Pendiente | ⚠️ No verificado |
+| POST /apply como RECLUTADOR → 403 | D1 | ⏳ Pendiente | ⚠️ No verificado |
+| Postular a oferta inactiva → 400 | D4 | ⏳ Pendiente | ⚠️ No verificado |
+| Postulación duplicada → 409 | D2 | ⏳ Pendiente | ❌ No implementado |
+| 10 postulaciones/día OK | D3 | ⏳ Pendiente | ❌ No implementado |
+| 11va postulación → 429 | D3 | ⏳ Pendiente | ❌ No implementado |
+| Response solo tiene score | D5 | ⏳ Pendiente | ✅ Implementado |
+
+**Total tests para Dara:** 7 tests (0 creados)
+
 ### Código que DEBE agregar:
 
 ```typescript
@@ -274,20 +390,55 @@ if (countHoy.data().count >= 10) {
 ## Resumen de Estado
 
 ```
-┌───────────────────────────────────────────────────────────────┐
-│               PORCENTAJE DE CUMPLIMIENTO                      │
-├───────────────────────────────────────────────────────────────┤
-│                                                               │
-│  Alex (Usuarios)     ████████░░░░░░░░  50%                   │
-│  Carlos (JWT)        ████████████████  95%                   │
-│  Juan (Firestore)    ██████░░░░░░░░░░  40%                   │
-│  Sebastián (Perfiles)██████░░░░░░░░░░  40%                   │
-│  Erick (Ofertas)     ██████████░░░░░░  60%                   │
-│  Dara (Matching)     ██████░░░░░░░░░░  40%                   │
-│                                                               │
-│  TOTAL PROYECTO: ~55%                                         │
-│                                                               │
-└───────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────────────┐
+│               PORCENTAJE DE CUMPLIMIENTO + TESTS                              │
+├───────────────────────────────────────────────────────────────────────────────┤
+│                                                                               │
+│  Contribuidor        Código Impl.    Tests Req.    Tests Creados             │
+│  ═══════════════════════════════════════════════════════════════════════════  │
+│  Alex (Usuarios)     ████░░░░  43%      9 tests      1 creado  (11%)         │
+│  Carlos (JWT)        █████████ 83%      6 tests      4 creados (67%)         │
+│  Juan (Firestore)    ██░░░░░░  25%      4 tests      3 creados (75%)         │
+│  Sebastián (Perfiles)░░░░░░░░   0%      6 tests      0 creados ( 0%)         │
+│  Erick (Ofertas)     ████░░░░  40%     10 tests      0 creados ( 0%)         │
+│  Dara (Matching)     ██░░░░░░  20%      7 tests      0 creados ( 0%)         │
+│                                                                               │
+│  ═══════════════════════════════════════════════════════════════════════════  │
+│                                                                               │
+│  TOTAL CÓDIGO:     ~55% implementado                                          │
+│  TOTAL TESTS:      13/61 creados (21%)                                        │
+│                                                                               │
+│  🔴 BLOQUEADORES CRÍTICOS:                                                    │
+│  • A3 Rate Limiting - SIN IMPLEMENTAR (vulnerable a brute force)             │
+│  • A4 Password validation - SIN IMPLEMENTAR (passwords débiles)               │
+│                                                                               │
+└───────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Responsabilidades de Testing
+
+```
+┌───────────────────────────────────────────────────────────────────────────────┐
+│                    QUIÉN HACE QUÉ                                             │
+├───────────────────────────────────────────────────────────────────────────────┤
+│                                                                               │
+│  ERICK GAONA (Test & Security):                                               │
+│  ═══════════════════════════════                                              │
+│  ✅ Define los estándares de seguridad (este documento)                       │
+│  ✅ Crea TODOS los tests (61 tests en total)                                  │
+│  ✅ Ejecuta los tests y documenta resultados                                  │
+│  ✅ Reporta qué código falta implementar                                      │
+│  ✅ Implementa código del módulo Ofertas                                      │
+│                                                                               │
+│  CADA CONTRIBUIDOR:                                                           │
+│  ═══════════════════                                                          │
+│  ✅ Implementa el código según los estándares                                 │
+│  ✅ Cuando implemente, los tests de Erick PASARÁN                             │
+│  ❌ NO crea tests (eso lo hace Erick)                                         │
+│                                                                               │
+└───────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -303,9 +454,12 @@ npm test
 
 # Ejecutar tests con cobertura
 npm run test -- --coverage
+
+# Ejecutar solo tests de seguridad
+npx jest security --forceExit
 ```
 
 ---
 
-*Documento simplificado - Solo checklists por contribuidor*  
+*Documento v7.0 - Actualizado con tests derivados*  
 *Responsable: Erick Gaona (Test & Security)*

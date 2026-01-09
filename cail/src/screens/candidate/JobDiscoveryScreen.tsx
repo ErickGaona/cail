@@ -23,7 +23,9 @@ import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { JobOffer } from '@/types';
 import { offersService } from '@/services/offers.service';
+import { applicationsService } from '@/services/applications.service';
 import { Offer } from '@/types/offers.types';
+import { Application, ApplicationStatusColors } from '@/types/applications.types';
 import { colors } from '@/theme/colors';
 
 interface FilterState {
@@ -87,14 +89,16 @@ export function JobDiscoveryScreen() {
     industry: 'Todos',
   });
   const [selectedOffer, setSelectedOffer] = useState<JobOffer | null>(null);
-  const [cvLink, setCvLink] = useState('');
-  const [notes, setNotes] = useState('');
 
   // Estados de carga y datos
   const [offers, setOffers] = useState<JobOffer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Estados para postulaciones
+  const [appliedOffers, setAppliedOffers] = useState<Map<string, Application>>(new Map());
+  const [isApplying, setIsApplying] = useState(false);
 
   // Cargar ofertas del API
   const loadOffers = useCallback(async (showRefresh = false) => {
@@ -119,12 +123,24 @@ export function JobDiscoveryScreen() {
     }
   }, []);
 
+  // Cargar ofertas a las que ya aplicó el usuario
+  const loadAppliedOffers = useCallback(async () => {
+    try {
+      const appliedMap = await applicationsService.getAppliedOffersMap();
+      setAppliedOffers(appliedMap);
+    } catch (err) {
+      console.log('Could not load applied offers:', err);
+    }
+  }, []);
+
   useEffect(() => {
     loadOffers();
-  }, [loadOffers]);
+    loadAppliedOffers();
+  }, [loadOffers, loadAppliedOffers]);
 
   const handleRefresh = () => {
     loadOffers(true);
+    loadAppliedOffers();
   };
 
   const summary = useMemo(() => {
@@ -164,62 +180,123 @@ export function JobDiscoveryScreen() {
   );
 
   const resetModal = () => {
-    setCvLink('');
-    setNotes('');
     setSelectedOffer(null);
   };
 
-  const handleApply = () => {
-    if (!cvLink.trim()) {
-      Alert.alert('Falta tu CV', 'Agrega el enlace de tu CV para continuar.');
-      return;
+  const handleApply = async () => {
+    if (!selectedOffer) return;
+
+    setIsApplying(true);
+    try {
+      const application = await applicationsService.applyToOffer(selectedOffer.id);
+
+      // Actualizar el mapa de ofertas aplicadas
+      setAppliedOffers(prev => {
+        const newMap = new Map(prev);
+        newMap.set(selectedOffer.id, application);
+        return newMap;
+      });
+
+      Alert.alert(
+        'Postulación Exitosa',
+        'Tu postulación ha sido enviada correctamente. El empleador revisará tu perfil.',
+        [{ text: 'Entendido', onPress: resetModal }]
+      );
+    } catch (error: any) {
+      if (error.status === 409) {
+        Alert.alert('Ya Aplicaste', 'Ya has aplicado a esta oferta anteriormente.');
+        // Refrescar el mapa por si acaso
+        loadAppliedOffers();
+      } else if (error.status === 401) {
+        Alert.alert('Sesión Expirada', 'Por favor, inicia sesión nuevamente.');
+      } else if (error.status === 403) {
+        Alert.alert('No Autorizado', 'Solo los candidatos pueden postular a ofertas.');
+      } else {
+        Alert.alert(
+          'Error',
+          error.message || 'No se pudo enviar la postulación. Intenta de nuevo.',
+          [{ text: 'Reintentar', onPress: handleApply }, { text: 'Cancelar', style: 'cancel' }]
+        );
+      }
+    } finally {
+      setIsApplying(false);
     }
-    Alert.alert('Postulación enviada', 'El empleador recibirá tu perfil y CV.');
-    resetModal();
   };
 
-  const renderOffer = ({ item }: { item: JobOffer }) => (
-    <Card style={[styles.offerCard, widthLimiter]}>
-      <View style={styles.offerHeader}>
-        <View style={styles.offerTitleWrap}>
-          <View style={styles.titleRow}>
-            <Text style={styles.offerTitle}>{item.title}</Text>
-            <StatusBadge label={item.hierarchyLevel} tone="success" />
+  // Verificar si ya aplicó a una oferta
+  const hasApplied = (offerId: string): boolean => {
+    return appliedOffers.has(offerId);
+  };
+
+  // Obtener el estado de aplicación si existe
+  const getApplicationStatus = (offerId: string): Application | undefined => {
+    return appliedOffers.get(offerId);
+  };
+
+  const renderOffer = ({ item }: { item: JobOffer }) => {
+    const applied = hasApplied(item.id);
+    const application = getApplicationStatus(item.id);
+    const statusInfo = application ? ApplicationStatusColors[application.estado] : null;
+
+    return (
+      <Card style={[styles.offerCard, widthLimiter]}>
+        <View style={styles.offerHeader}>
+          <View style={styles.offerTitleWrap}>
+            <View style={styles.titleRow}>
+              <Text style={styles.offerTitle}>{item.title}</Text>
+              {applied && statusInfo ? (
+                <View style={[styles.appliedBadge, { backgroundColor: statusInfo.bg }]}>
+                  <Feather name="check-circle" size={12} color={statusInfo.text} />
+                  <Text style={[styles.appliedBadgeText, { color: statusInfo.text }]}>
+                    {statusInfo.label}
+                  </Text>
+                </View>
+              ) : (
+                <StatusBadge label={item.hierarchyLevel} tone="success" />
+              )}
+            </View>
           </View>
         </View>
-      </View>
 
-      <Text style={styles.offerDescription} numberOfLines={2}>
-        {item.description}
-      </Text>
+        <Text style={styles.offerDescription} numberOfLines={2}>
+          {item.description}
+        </Text>
 
-      <View style={styles.metaGrid}>
-        <MetaItem icon="map-pin" label={item.location} />
-        <MetaItem icon="briefcase" label={item.modality} />
-        <MetaItem icon="dollar-sign" label={item.salaryRange} />
-      </View>
+        <View style={styles.metaGrid}>
+          <MetaItem icon="map-pin" label={item.location} />
+          <MetaItem icon="briefcase" label={item.modality} />
+          <MetaItem icon="dollar-sign" label={item.salaryRange} />
+        </View>
 
-      <View style={styles.tagList}>
-        <Chip label={item.employmentType} />
-        {item.requiredCompetencies.slice(0, 3).map((competency) => (
-          <Chip key={competency} label={competency} />
-        ))}
-      </View>
+        <View style={styles.tagList}>
+          <Chip label={item.employmentType} />
+          {item.requiredCompetencies.slice(0, 3).map((competency) => (
+            <Chip key={competency} label={competency} />
+          ))}
+        </View>
 
-      <View style={styles.requirementsList}>
-        <RequirementItem icon="award" text={item.requiredEducation} />
-        <RequirementItem icon="trending-up" text={item.requiredExperience} />
-      </View>
+        <View style={styles.requirementsList}>
+          <RequirementItem icon="award" text={item.requiredEducation} />
+          <RequirementItem icon="trending-up" text={item.requiredExperience} />
+        </View>
 
-      <Button
-        label="Postular a Oferta"
-        onPress={() => setSelectedOffer(item)}
-        style={styles.applyButton}
-      />
+        {applied ? (
+          <View style={styles.appliedContainer}>
+            <Feather name="check-circle" size={16} color="#059669" />
+            <Text style={styles.appliedText}>Ya postulaste a esta oferta</Text>
+          </View>
+        ) : (
+          <Button
+            label="Postular a Oferta"
+            onPress={() => setSelectedOffer(item)}
+            style={styles.applyButton}
+          />
+        )}
 
-      <Text style={styles.publishDate}>Publicado: {item.postedDate || '24/10/2025'}</Text>
-    </Card>
-  );
+        <Text style={styles.publishDate}>Publicado: {item.postedDate || '24/10/2025'}</Text>
+      </Card>
+    );
+  };
 
   // Loading state
   if (isLoading) {
@@ -343,22 +420,13 @@ export function JobDiscoveryScreen() {
 
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.modalBody}>
-                <Text style={styles.modalLabel}>Curriculum Vitae (CV) *</Text>
-                <TouchableOpacity style={styles.fileSelector}>
-                  <Text style={styles.fileSelectorText}>
-                    {cvLink || 'Seleccionar archivo Ningún ar...leccionado'}
+                <View style={styles.confirmationMessage}>
+                  <Feather name="send" size={32} color="#0B7A4D" />
+                  <Text style={styles.confirmationTitle}>Confirmar Postulación</Text>
+                  <Text style={styles.confirmationText}>
+                    Al postularte, el reclutador podrá ver tu perfil y datos de contacto.
                   </Text>
-                </TouchableOpacity>
-                <Text style={styles.modalHelper}>Formatos: PDF, DOC, DOCX</Text>
-
-                <Text style={styles.modalLabel}>Carta de Presentación (Opcional)</Text>
-                <InputField
-                  value={notes}
-                  onChangeText={setNotes}
-                  placeholder="Escribe una breve carta de presentación..."
-                  multiline
-                  style={styles.textArea}
-                />
+                </View>
 
                 {selectedOffer && (
                   <View style={styles.requirementsBox}>
@@ -384,11 +452,29 @@ export function JobDiscoveryScreen() {
                   </View>
                 )}
 
-                <Button
-                  label="Enviar Postulación"
-                  onPress={handleApply}
-                  style={styles.submitButton}
-                />
+                <View style={styles.modalActions}>
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={resetModal}
+                    disabled={isApplying}
+                  >
+                    <Text style={styles.cancelButtonText}>Cancelar</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.confirmButton, isApplying && styles.confirmButtonDisabled]}
+                    onPress={handleApply}
+                    disabled={isApplying}
+                  >
+                    {isApplying ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <>
+                        <Feather name="check" size={18} color="#FFFFFF" />
+                        <Text style={styles.confirmButtonText}>Confirmar Postulación</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
               </View>
             </ScrollView>
           </View>
@@ -766,5 +852,91 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: 8,
+  },
+  // Applied status styles
+  appliedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  appliedBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  appliedContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#ECFDF5',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginTop: 4,
+  },
+  appliedText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#059669',
+  },
+  // Confirmation modal styles
+  confirmationMessage: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    gap: 12,
+  },
+  confirmationTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  confirmationText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E4E9',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  confirmButton: {
+    flex: 2,
+    flexDirection: 'row',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: '#0B7A4D',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  confirmButtonDisabled: {
+    backgroundColor: '#9CA3AF',
+  },
+  confirmButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });

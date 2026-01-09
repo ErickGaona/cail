@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useResponsiveLayout } from '@/hooks/useResponsive';
 import { offersService } from '@/services/offers.service';
+import { applicationsService } from '@/services/applications.service';
 import { Offer, CreateOfferDTO, OfferStatus as ApiOfferStatus } from '@/types/offers.types';
+import { Application, ApplicationStatusColors } from '@/types/applications.types';
 
 type OfferStatus = 'active' | 'archived' | 'deleted';
 type OfferAction = 'archive' | 'restore' | 'delete';
@@ -93,6 +95,12 @@ export function OffersManagementScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Estado para modal de aplicaciones
+  const [showApplicationsModal, setShowApplicationsModal] = useState(false);
+  const [selectedOfferApplications, setSelectedOfferApplications] = useState<Application[]>([]);
+  const [loadingApplications, setLoadingApplications] = useState(false);
+  const [applicationsOffer, setApplicationsOffer] = useState<JobOffer | null>(null);
 
   // Form states
   const [title, setTitle] = useState('');
@@ -252,6 +260,32 @@ export function OffersManagementScreen() {
   const requestOfferAction = (action: OfferAction, offer: JobOffer) => setPendingAction({ type: action, offer });
   const closeActionModal = () => setPendingAction(null);
 
+  // Handler para ver aplicaciones de una oferta
+  const handleViewApplications = async (offer: JobOffer) => {
+    if (!offer.apiId) return;
+
+    setApplicationsOffer(offer);
+    setShowApplicationsModal(true);
+    setLoadingApplications(true);
+
+    try {
+      const apps = await applicationsService.getOfferApplications(offer.apiId);
+      setSelectedOfferApplications(apps);
+    } catch (err: any) {
+      console.error('Error loading applications:', err);
+      Alert.alert('Error', 'No se pudieron cargar las aplicaciones');
+      setSelectedOfferApplications([]);
+    } finally {
+      setLoadingApplications(false);
+    }
+  };
+
+  const closeApplicationsModal = () => {
+    setShowApplicationsModal(false);
+    setSelectedOfferApplications([]);
+    setApplicationsOffer(null);
+  };
+
   const handleActionConfirm = async () => {
     if (!pendingAction || !pendingAction.offer.apiId) return;
 
@@ -261,17 +295,17 @@ export function OffersManagementScreen() {
       setIsSubmitting(true);
 
       if (type === 'archive') {
-        await offersService.pauseOffer(offer.apiId);
+        await offersService.pauseOffer(offer.apiId!);
         setOffers(prev => prev.map(item =>
           item.id === offer.id ? { ...item, status: 'archived' as OfferStatus, apiEstado: 'PAUSADA' } : item
         ));
       } else if (type === 'restore') {
-        await offersService.activateOffer(offer.apiId);
+        await offersService.activateOffer(offer.apiId!);
         setOffers(prev => prev.map(item =>
           item.id === offer.id ? { ...item, status: 'active' as OfferStatus, apiEstado: 'ACTIVA' } : item
         ));
       } else if (type === 'delete') {
-        await offersService.deleteOffer(offer.apiId);
+        await offersService.deleteOffer(offer.apiId!);
         setOffers(prev => prev.filter(item => item.id !== offer.id));
       }
 
@@ -382,6 +416,7 @@ export function OffersManagementScreen() {
                   onArchive={() => requestOfferAction('archive', offer)}
                   onRestore={() => requestOfferAction('restore', offer)}
                   onDelete={() => requestOfferAction('delete', offer)}
+                  onViewApplications={() => handleViewApplications(offer)}
                 />
               ))
             )}
@@ -587,6 +622,84 @@ export function OffersManagementScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Modal Ver Aplicaciones */}
+      <Modal visible={showApplicationsModal} animationType="slide" transparent onRequestClose={closeApplicationsModal}>
+        <View style={[styles.modalOverlay, isDesktop ? styles.modalOverlayDesktop : styles.modalOverlayMobile]}>
+          <View
+            style={[
+              styles.modalContent,
+              isDesktop ? styles.modalContentDesktop : styles.modalContentMobile,
+              { maxWidth: isDesktop ? 600 : contentWidth },
+            ]}
+          >
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={styles.modalTitle}>Aplicaciones Recibidas</Text>
+                <Text style={styles.modalSubtitle}>{applicationsOffer?.title}</Text>
+              </View>
+              <TouchableOpacity onPress={closeApplicationsModal}>
+                <Feather name="x" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            {loadingApplications ? (
+              <View style={styles.applicationsLoading}>
+                <ActivityIndicator size="large" color="#F59E0B" />
+                <Text style={styles.loadingText}>Cargando aplicaciones...</Text>
+              </View>
+            ) : selectedOfferApplications.length === 0 ? (
+              <View style={styles.applicationsEmpty}>
+                <Feather name="inbox" size={48} color="#D1D5DB" />
+                <Text style={styles.applicationsEmptyText}>No hay aplicaciones para esta oferta</Text>
+                <Text style={styles.applicationsEmptySubtext}>Los candidatos aún no han aplicado</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={selectedOfferApplications}
+                keyExtractor={(item) => item.idAplicacion}
+                style={styles.applicationsList}
+                renderItem={({ item }) => {
+                  const statusInfo = ApplicationStatusColors[item.estado];
+                  const fechaApp = item.fechaAplicacion instanceof Date
+                    ? item.fechaAplicacion
+                    : new Date(item.fechaAplicacion);
+
+                  return (
+                    <View style={styles.applicationItem}>
+                      <View style={styles.applicationItemHeader}>
+                        <View style={styles.applicationItemInfo}>
+                          <Text style={styles.applicationItemId}>
+                            Candidato: {item.idPostulante.slice(0, 8)}...
+                          </Text>
+                          <Text style={styles.applicationItemDate}>
+                            {fechaApp.toLocaleDateString('es-EC', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric'
+                            })}
+                          </Text>
+                        </View>
+                        <View style={[styles.applicationItemBadge, { backgroundColor: statusInfo.bg }]}>
+                          <Text style={[styles.applicationItemBadgeText, { color: statusInfo.text }]}>
+                            {statusInfo.label}
+                          </Text>
+                        </View>
+                      </View>
+                      {item.matchScore !== undefined && (
+                        <View style={styles.applicationItemScore}>
+                          <Text style={styles.applicationItemScoreLabel}>Match Score:</Text>
+                          <Text style={styles.applicationItemScoreValue}>{item.matchScore}%</Text>
+                        </View>
+                      )}
+                    </View>
+                  );
+                }}
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -605,12 +718,14 @@ function OfferCard({
   onArchive,
   onRestore,
   onDelete,
+  onViewApplications,
 }: {
   offer: JobOffer;
   onEdit: () => void;
   onArchive: () => void;
   onRestore: () => void;
   onDelete: () => void;
+  onViewApplications: () => void;
 }) {
   return (
     <View style={styles.offerCard}>
@@ -640,6 +755,10 @@ function OfferCard({
       <View style={styles.offerActions}>
         {offer.status === 'active' && (
           <>
+            <TouchableOpacity style={styles.infoGhost} onPress={onViewApplications}>
+              <Feather name="users" size={16} color="#3B82F6" />
+              <Text style={[styles.actionText, { color: '#3B82F6' }]}>Aplicaciones</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.primaryGhost} onPress={onEdit}>
               <Feather name="edit-2" size={16} color="#10B981" />
               <Text style={[styles.actionText, { color: '#10B981' }]}>Actualizar</Text>
@@ -1174,6 +1293,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#FEE2E2',
   },
+  infoGhost: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: '#DBEAFE',
+  },
   actionText: {
     fontSize: 13,
     fontWeight: '600',
@@ -1433,5 +1561,82 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 15,
     fontWeight: '700',
+  },
+  // Applications Modal Styles
+  applicationsLoading: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  applicationsEmpty: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  applicationsEmptyText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginTop: 12,
+  },
+  applicationsEmptySubtext: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    marginTop: 4,
+  },
+  applicationsList: {
+    maxHeight: 400,
+    padding: 16,
+  },
+  applicationItem: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+  },
+  applicationItemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  applicationItemInfo: {
+    flex: 1,
+  },
+  applicationItemId: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  applicationItemDate: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  applicationItemBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  applicationItemBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  applicationItemScore: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  applicationItemScoreLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  applicationItemScoreValue: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#10B981',
   },
 });

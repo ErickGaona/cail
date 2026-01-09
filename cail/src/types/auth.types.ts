@@ -11,6 +11,7 @@ export interface LoginResponse {
     nombreCompleto: string;
     tipoUsuario: 'POSTULANTE' | 'RECLUTADOR' | 'ADMINISTRADOR';
     token: string;
+    needsPasswordChange?: boolean;
 }
 
 // Candidate profile data

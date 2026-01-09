@@ -21,6 +21,8 @@ export function LoginForm({ role, onSuccess, onBack, onSwitchToRegister }: Login
   const [showPassword, setShowPassword] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
   const [splashSuccess, setSplashSuccess] = useState(false);
+  const [splashError, setSplashError] = useState(false);
+  const [splashErrorMessage, setSplashErrorMessage] = useState('');
   const [pendingData, setPendingData] = useState<any>(null);
 
   const handleSubmit = async () => {
@@ -31,9 +33,20 @@ export function LoginForm({ role, onSuccess, onBack, onSwitchToRegister }: Login
 
     setLoading(true);
     setShowSplash(true);
+    setSplashError(false);
+    setSplashSuccess(false);
 
     try {
       const response = await authService.login(email, password);
+
+      // Validar que el tipo de usuario coincide con el rol seleccionado
+      const backendRole = response.tipoUsuario === 'POSTULANTE' ? 'candidate' : 'employer';
+
+      if (backendRole !== role) {
+        setSplashErrorMessage('Credenciales inválidas');
+        setSplashError(true);
+        return;
+      }
 
       const userData = role === 'candidate'
         ? {
@@ -47,17 +60,15 @@ export function LoginForm({ role, onSuccess, onBack, onSwitchToRegister }: Login
           company: 'Empresa',
           contactName: response.nombreCompleto,
           email: response.email,
-          needsPasswordChange: false,
+          needsPasswordChange: response.needsPasswordChange || false,
           isEmailVerified: true,
         };
 
       setPendingData(userData);
       setSplashSuccess(true);
     } catch (error: any) {
-      setShowSplash(false);
-      setSplashSuccess(false);
-      Alert.alert('Error', error.message || 'Error al iniciar sesión');
-      setLoading(false);
+      setSplashErrorMessage('Credenciales inválidas');
+      setSplashError(true);
     }
   };
 
@@ -68,6 +79,13 @@ export function LoginForm({ role, onSuccess, onBack, onSwitchToRegister }: Login
     if (pendingData) {
       onSuccess(pendingData);
     }
+  };
+
+  const handleSplashErrorComplete = () => {
+    setShowSplash(false);
+    setSplashError(false);
+    setSplashErrorMessage('');
+    setLoading(false);
   };
 
   const accentColor = role === 'candidate' ? '#0B7A4D' : '#F59E0B';
@@ -207,7 +225,10 @@ export function LoginForm({ role, onSuccess, onBack, onSwitchToRegister }: Login
         message="Iniciando sesión..."
         variant={role}
         showSuccess={splashSuccess}
+        showError={splashError}
+        errorMessage={splashErrorMessage}
         onSuccessComplete={handleSplashComplete}
+        onErrorComplete={handleSplashErrorComplete}
       />
     </View>
   );

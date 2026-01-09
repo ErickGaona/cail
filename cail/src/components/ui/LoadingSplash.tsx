@@ -7,7 +7,10 @@ interface LoadingSplashProps {
     message?: string;
     variant?: 'candidate' | 'employer';
     showSuccess?: boolean;
+    showError?: boolean;
+    errorMessage?: string;
     onSuccessComplete?: () => void;
+    onErrorComplete?: () => void;
 }
 
 export function LoadingSplash({
@@ -15,13 +18,19 @@ export function LoadingSplash({
     message = 'Cargando...',
     variant = 'candidate',
     showSuccess = false,
+    showError = false,
+    errorMessage,
     onSuccessComplete,
+    onErrorComplete,
 }: LoadingSplashProps) {
     const scaleAnim = useRef(new Animated.Value(0.8)).current;
     const opacityAnim = useRef(new Animated.Value(0)).current;
     const successScale = useRef(new Animated.Value(0)).current;
+    const errorScale = useRef(new Animated.Value(0)).current;
+    const shakeAnim = useRef(new Animated.Value(0)).current;
     const pulseAnim = useRef(new Animated.Value(1)).current;
     const [internalSuccess, setInternalSuccess] = useState(false);
+    const [internalError, setInternalError] = useState(false);
 
     const accentColor = variant === 'candidate' ? '#0B7A4D' : '#F59E0B';
     const accentLight = variant === 'candidate' ? '#ECFDF5' : '#FEF3C7';
@@ -29,6 +38,7 @@ export function LoadingSplash({
     useEffect(() => {
         if (visible) {
             setInternalSuccess(false);
+            setInternalError(false);
             // Fade in and scale up
             Animated.parallel([
                 Animated.spring(scaleAnim, {
@@ -79,6 +89,7 @@ export function LoadingSplash({
     useEffect(() => {
         if (showSuccess && visible) {
             setInternalSuccess(true);
+            setInternalError(false);
             // Stop pulse, show success checkmark
             pulseAnim.stopAnimation();
 
@@ -104,7 +115,58 @@ export function LoadingSplash({
         }
     }, [showSuccess]);
 
+    useEffect(() => {
+        if (showError && visible) {
+            setInternalError(true);
+            setInternalSuccess(false);
+            // Stop pulse, show error X
+            pulseAnim.stopAnimation();
+
+            // Shake animation
+            Animated.sequence([
+                Animated.spring(errorScale, {
+                    toValue: 1.2,
+                    tension: 100,
+                    friction: 5,
+                    useNativeDriver: true,
+                }),
+                Animated.spring(errorScale, {
+                    toValue: 1,
+                    tension: 100,
+                    friction: 10,
+                    useNativeDriver: true,
+                }),
+            ]).start();
+
+            // Shake effect
+            Animated.sequence([
+                Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+                Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
+                Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+                Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
+                Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+                Animated.delay(1500),
+            ]).start(() => {
+                onErrorComplete?.();
+            });
+        } else {
+            errorScale.setValue(0);
+            shakeAnim.setValue(0);
+        }
+    }, [showError]);
+
     if (!visible) return null;
+
+    const getDisplayMessage = () => {
+        if (internalSuccess) return '¡Listo!';
+        if (internalError) return errorMessage || 'Error de acceso';
+        return message;
+    };
+
+    const getMessageColor = () => {
+        if (internalError) return '#DC2626';
+        return accentColor;
+    };
 
     return (
         <Modal
@@ -119,16 +181,28 @@ export function LoadingSplash({
                         styles.container,
                         {
                             opacity: opacityAnim,
-                            transform: [{ scale: scaleAnim }],
+                            transform: [
+                                { scale: scaleAnim },
+                                { translateX: shakeAnim },
+                            ],
                         },
                     ]}
                 >
                     {/* Logo Circle */}
-                    <View style={[styles.logoCircle, { backgroundColor: accentLight }]}>
+                    <View style={[
+                        styles.logoCircle,
+                        { backgroundColor: internalError ? '#FEE2E2' : accentLight }
+                    ]}>
                         {internalSuccess ? (
                             <View style={[styles.successCircle, { backgroundColor: '#10B981' }]}>
                                 <Animated.View style={{ transform: [{ scale: successScale }] }}>
                                     <Feather name="check" size={40} color="#FFFFFF" />
+                                </Animated.View>
+                            </View>
+                        ) : internalError ? (
+                            <View style={[styles.successCircle, { backgroundColor: '#DC2626' }]}>
+                                <Animated.View style={{ transform: [{ scale: errorScale }] }}>
+                                    <Feather name="x" size={40} color="#FFFFFF" />
                                 </Animated.View>
                             </View>
                         ) : (
@@ -146,12 +220,12 @@ export function LoadingSplash({
                     <Text style={styles.brandName}>CAIL</Text>
 
                     {/* Message */}
-                    <Text style={[styles.message, { color: accentColor }]}>
-                        {internalSuccess ? '¡Listo!' : message}
+                    <Text style={[styles.message, { color: getMessageColor() }]}>
+                        {getDisplayMessage()}
                     </Text>
 
                     {/* Loading dots animation */}
-                    {!internalSuccess && (
+                    {!internalSuccess && !internalError && (
                         <View style={styles.dotsContainer}>
                             <LoadingDot delay={0} color={accentColor} />
                             <LoadingDot delay={150} color={accentColor} />
@@ -243,6 +317,13 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         marginBottom: 20,
+    },
+    errorSubtitle: {
+        fontSize: 14,
+        color: '#6B7280',
+        textAlign: 'center',
+        marginBottom: 20,
+        paddingHorizontal: 20,
     },
     dotsContainer: {
         flexDirection: 'row',

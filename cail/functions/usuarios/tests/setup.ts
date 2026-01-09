@@ -1,21 +1,13 @@
-// Test setup file
-// Configuración global para tests
-
-// Variables de entorno para tests (ANTES de importar cualquier módulo)
-process.env.NODE_ENV = 'test';
-process.env.JWT_SECRET = 'test-secret-key-minimum-32-characters-long';
-process.env.JWT_EXPIRES_IN = '1h';
-process.env.FIREBASE_PROJECT_ID = 'test-project';
-process.env.FIREBASE_CLIENT_EMAIL = 'test@test-project.iam.gserviceaccount.com';
-process.env.FIREBASE_PRIVATE_KEY = '-----BEGIN RSA PRIVATE KEY-----\nMIIBOgIBAAJBALRiMLAHpKh8JQKcVVvUMnEGEDRxz3aQfQIVCK0eOmGqpVGXHH3h\nPCkRZxTkMcQd8iQzVLEV7D7pn0qAQzUQvTECAwEAAQJAYPRHLLNSBx7y6yNBwLgD\nCqKTJKLJMJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJ\nKJECIQDrYnN/AKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJK\nJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJKJK\nJKJKJKJKJKJKJKJKJKJK\n-----END RSA PRIVATE KEY-----\n';
+// Test setup file - se ejecuta DESPUÉS de cargar módulos
+// Mocks y configuración de Jest
 
 // Aumentar timeout para tests de integración
 jest.setTimeout(30000);
 
-// Silenciar console.log durante tests
+// Silenciar console.log durante tests (excepto warn para debugging)
 beforeAll(() => {
     jest.spyOn(console, 'log').mockImplementation(() => {});
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    // Mantener console.error para ver errores importantes
 });
 
 afterAll(() => {
@@ -43,7 +35,7 @@ jest.mock('firebase-admin', () => {
     };
 
     return {
-        apps: [], // Array de apps inicializadas
+        apps: [],
         initializeApp: jest.fn(),
         credential: {
             cert: jest.fn(() => ({})),

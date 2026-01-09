@@ -12,5 +12,8 @@ module.exports = {
     coverageDirectory: 'coverage',
     coverageReporters: ['text', 'lcov'],
     testTimeout: 30000,
+    // setupFiles: se ejecuta ANTES de importar módulos (variables de entorno)
+    setupFiles: ['<rootDir>/tests/setup.env.ts'],
+    // setupFilesAfterEnv: se ejecuta DESPUÉS (mocks, beforeAll, etc)
     setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
 };

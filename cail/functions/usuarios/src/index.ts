@@ -90,7 +90,11 @@ http('usuarios', app);
 // ============================================
 // Servidor local para desarrollo
 // ============================================
-if (process.env.NODE_ENV !== 'production' || !process.env.FUNCTION_TARGET) {
+const isTest = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined;
+const isProduction = process.env.NODE_ENV === 'production';
+const isCloudFunction = !!process.env.FUNCTION_TARGET;
+
+if (!isTest && !isProduction && !isCloudFunction) {
     const PORT = config.port;
     app.listen(PORT, () => {
         console.log(`🚀 Usuarios Function running on port ${PORT}`);

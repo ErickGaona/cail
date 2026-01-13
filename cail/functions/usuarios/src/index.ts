@@ -1,3 +1,4 @@
+
 /**
  * Cloud Function: Usuarios
  * 
@@ -32,6 +33,7 @@ import usersRoutes from './users/infrastructure/routes/users.routes';
 
 // Importar middleware
 import { errorHandler } from './shared/middleware/error.middleware';
+import { applySecurityMiddleware } from './shared/middleware/security.middleware';
 
 // Inicializar Firebase
 initializeFirebase();
@@ -53,6 +55,9 @@ app.options('*', cors());
 // Parseo de JSON
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Aplicar middleware de seguridad (helmet + rate-limit) - Agregado por Erick Gaona
+applySecurityMiddleware(app);
 
 // ============================================
 // Health Check Endpoint

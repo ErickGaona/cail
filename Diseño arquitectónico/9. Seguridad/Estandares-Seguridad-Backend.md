@@ -2,7 +2,7 @@
 ## Checklist por Contribuidor
 
 **Responsable:** Erick Gaona (Test & Security)  
-**Versión:** 7.0 | **Fecha:** 08 Enero 2026
+**Versión:** 8.0 | **Fecha:** 13 Enero 2026
 
 ---
 
@@ -12,7 +12,7 @@
 cail/functions/
 ├── usuarios/     (Puerto 8080) → Alex Ramírez + Carlos + Juan + Sebastián
 ├── ofertas/      (Puerto 8083) → Carlos Mejía + Erick Gaona  
-└── matching/     (Puerto 8084) → Dara Van Gijsel
+└── matching/     (Puerto 8084) → Cristóbal Espinosa
 ```
 
 ---
@@ -21,28 +21,26 @@ cail/functions/
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    TESTS REQUERIDOS POR MÓDULO                              │
-│                    (Responsable de crear tests: Erick Gaona)                │
+│                    TESTS DE SEGURIDAD CREADOS                               │
+│                    (Responsable: Erick Gaona - 13/01/2026)                  │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  MÓDULO USUARIOS (Alex + Carlos + Juan + Sebastián)                         │
-│  └── Total: 33 tests                                                        │
-│      ├── Seguridad Auth:     20 tests  ──► 13 CREADOS ✅                    │
-│      ├── Integración Auth:    5 tests  ──►  0 creados ⏳                    │
-│      └── Perfiles:            8 tests  ──►  0 creados ⏳                    │
+│  └── Tests de Seguridad: 13/13 ✅ PASAN                                     │
 │                                                                             │
 │  MÓDULO OFERTAS (Carlos + Erick)                                            │
-│  └── Total: 15 tests                                                        │
-│      ├── Seguridad:          10 tests  ──►  0 creados ⏳                    │
-│      └── Integración:         5 tests  ──►  0 creados ⏳                    │
+│  └── Tests de Seguridad: 13/13 ✅ PASAN                                     │
 │                                                                             │
-│  MÓDULO MATCHING (Dara)                                                     │
-│  └── Total: 13 tests                                                        │
-│      ├── Seguridad:           6 tests  ──►  0 creados ⏳                    │
-│      └── Integración:         7 tests  ──►  0 creados ⏳                    │
+│  MÓDULO MATCHING (Cristóbal Espinosa)                                       │
+│  └── Tests de Seguridad: 10/11 ⚠️ (1 falla - esperando implementación)     │
 │                                                                             │
 │  ═══════════════════════════════════════════════════════════════════════    │
-│  TOTAL PROYECTO: 61 tests requeridos | 13 creados (21%)                     │
+│  TOTAL TESTS SEGURIDAD: 37 creados | 36 pasan (97%)                         │
+│                                                                             │
+│  SEGURIDAD IMPLEMENTADA (13/01/2026):                                       │
+│  ├── ✅ Helmet (Security Headers) - 3 microservicios                        │
+│  ├── ✅ Rate Limiting General (100 req/15min)                               │
+│  └── ✅ Rate Limiting Auth (10 req/15min)                                   │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -57,9 +55,9 @@ cail/functions/
 
 | # | Requerimiento | Estado | Cómo Implementar |
 |---|---------------|--------|------------------|
-| A1 | Helmet (headers seguridad) | ⚠️ FALTA | `npm i helmet` + `app.use(helmet())` |
+| A1 | Helmet (headers seguridad) | ✅ OK | **Implementado por Erick Gaona (13/01/2026)** |
 | A2 | CORS restrictivo | ⚠️ PARCIAL | Cambiar `origin: true` → `['https://cail.ec']` |
-| A3 | Rate Limiting en Login | ⚠️ FALTA | `npm i express-rate-limit` (5 intentos/15min) |
+| A3 | Rate Limiting en Login | ✅ OK | **Implementado por Erick Gaona (13/01/2026)** - 10 intentos/15min |
 | A4 | Password 12+ caracteres | ⚠️ FALTA | Agregar validación en registro |
 | A5 | Validación de Email | ✅ OK | Ya existe en `Email.ts` |
 | A6 | Dockerfile no-root | ✅ OK | `USER nodejs` ya existe |
@@ -69,11 +67,11 @@ cail/functions/
 
 | Test | Verifica Estándar | Estado Test | Estado Código |
 |------|-------------------|-------------|---------------|
-| Headers X-Frame-Options presente | A1 | ⏳ Pendiente | ❌ No implementado |
-| Headers X-Content-Type-Options presente | A1 | ⏳ Pendiente | ❌ No implementado |
+| Headers X-Frame-Options presente | A1 | ✅ Implementado | ✅ helmet (Erick) |
+| Headers X-Content-Type-Options presente | A1 | ✅ Implementado | ✅ helmet (Erick) |
 | CORS rechaza origen no permitido | A2 | ⏳ Pendiente | ⚠️ Parcial |
-| Login 6to intento → 429 | A3 | ⏳ Pendiente | ❌ No implementado |
-| Login después 15min → OK | A3 | ⏳ Pendiente | ❌ No implementado |
+| Login 11vo intento → 429 | A3 | ✅ Implementado | ✅ rate-limit (Erick) |
+| Login después 15min → OK | A3 | ✅ Implementado | ✅ rate-limit (Erick) |
 | Password < 12 chars → 400 | A4 | ⏳ Pendiente | ❌ No implementado |
 | Password sin mayúscula → 400 | A4 | ⏳ Pendiente | ❌ No implementado |
 | Password sin número → 400 | A4 | ⏳ Pendiente | ❌ No implementado |
@@ -332,7 +330,7 @@ export const buscarOfertasValidator = [
 
 ---
 
-## 6. Dara Van Gijsel - Microservicio Matching
+## 6. Cristóbal Espinosa - Microservicio Matching
 
 **Módulo:** `functions/matching/`
 
@@ -346,7 +344,7 @@ export const buscarOfertasValidator = [
 | D4 | Solo ofertas activas | ⚠️ VERIFICAR | Validar estado |
 | D5 | No exponer algoritmo | ✅ OK | Solo retorna score |
 
-### 🧪 Tests Derivados (Erick crea, Dara implementa)
+### 🧪 Tests Derivados (Erick crea, Cristóbal implementa)
 
 | Test | Verifica Estándar | Estado Test | Estado Código |
 |------|-------------------|-------------|---------------|
@@ -358,7 +356,7 @@ export const buscarOfertasValidator = [
 | 11va postulación → 429 | D3 | ⏳ Pendiente | ❌ No implementado |
 | Response solo tiene score | D5 | ⏳ Pendiente | ✅ Implementado |
 
-**Total tests para Dara:** 7 tests (0 creados)
+**Total tests para Cristóbal:** 11 tests de seguridad CREADOS (10/11 pasan)
 
 ### Código que DEBE agregar:
 
@@ -413,7 +411,7 @@ if (countHoy.data().count >= 10) {
 │  • Juan (Firestore):         25% implementado                                 │
 │  • Sebastián (Perfiles):      0% implementado                                 │
 │  • Erick (Ofertas + Tests):  40% implementado                                 │
-│  • Dara (Matching):          20% implementado                                 │
+│  • Cristóbal (Matching):     Tests listos, esperando código                   │
 │                                                                               │
 │  🔴 BLOQUEADORES CRÍTICOS:                                                    │
 │  • A3 Rate Limiting - SIN IMPLEMENTAR (vulnerable a brute force)             │

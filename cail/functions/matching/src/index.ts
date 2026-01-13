@@ -22,6 +22,7 @@ import { config } from './config/env.config';
 import { initializeFirebase } from './config/firebase.config';
 import matchingRoutes from './matching/infrastructure/routes/matching.routes';
 import { errorHandler } from './shared/middleware/error.middleware';
+import { applySecurityMiddleware } from './shared/middleware/security.middleware';
 
 // Inicializar Firebase
 initializeFirebase();
@@ -35,6 +36,9 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Aplicar middleware de seguridad (helmet + rate-limit) - Agregado por Erick Gaona
+applySecurityMiddleware(app);
 
 // Health Check
 app.get('/health', (_req: Request, res: Response) => {
@@ -56,8 +60,12 @@ app.use(errorHandler);
 // Exportar para Cloud Functions
 http('matching', app);
 
-// Servidor local para desarrollo
-if (process.env.NODE_ENV !== 'production' || !process.env.FUNCTION_TARGET) {
+// Servidor local para desarrollo (NO iniciar durante tests)
+const isTest = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined;
+const isProduction = process.env.NODE_ENV === 'production';
+const isCloudFunction = process.env.FUNCTION_TARGET !== undefined;
+
+if (!isTest && !isProduction && !isCloudFunction) {
     const PORT = config.port;
     app.listen(PORT, () => {
         console.log(`🚀 Matching Function running on port ${PORT}`);

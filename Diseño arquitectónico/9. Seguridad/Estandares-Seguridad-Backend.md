@@ -2,555 +2,359 @@
 ## Checklist por Contribuidor
 
 **Responsable:** Erick Gaona (Test & Security)  
-**Versión:** 8.0 | **Fecha:** 13 Enero 2026
+**Versión:** 9.0 | **Fecha:** 13 Enero 2026
 
 ---
 
-## Estructura de Microservicios
-
-```
-cail/functions/
-├── usuarios/     (Puerto 8080) → Alex Ramírez + Carlos + Juan + Sebastián
-├── ofertas/      (Puerto 8083) → Carlos Mejía + Erick Gaona  
-└── matching/     (Puerto 8084) → Cristóbal Espinosa
-```
-
----
-
-## Resumen de Tests por Módulo
+## Estructura de Microservicios y Responsables
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    TESTS DE SEGURIDAD CREADOS                               │
-│                    (Responsable: Erick Gaona - 13/01/2026)                  │
+│                    ASIGNACIÓN DE MÓDULOS                                    │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  MÓDULO USUARIOS (Alex + Carlos + Juan + Sebastián)                         │
-│  └── Tests de Seguridad: 13/13 ✅ PASAN                                     │
+│  cail/functions/                                                            │
+│  ├── usuarios/     → Alex Ramírez + Sebastián Calderón                     │
+│  ├── ofertas/      → Erick Gaona + Carlos Mejía                            │
+│  └── matching/     → Dara + Cristóbal Espinosa                             │
 │                                                                             │
-│  MÓDULO OFERTAS (Carlos + Erick)                                            │
-│  └── Tests de Seguridad: 13/13 ✅ PASAN                                     │
-│                                                                             │
-│  MÓDULO MATCHING (Cristóbal Espinosa)                                       │
-│  └── Tests de Seguridad: 10/11 ⚠️ (1 falla - esperando implementación)     │
-│                                                                             │
-│  ═══════════════════════════════════════════════════════════════════════    │
-│  TOTAL TESTS SEGURIDAD: 37 creados | 36 pasan (97%)                         │
-│                                                                             │
-│  SEGURIDAD IMPLEMENTADA (13/01/2026):                                       │
-│  ├── ✅ Helmet (Security Headers) - 3 microservicios                        │
-│  ├── ✅ Rate Limiting General (100 req/15min)                               │
-│  └── ✅ Rate Limiting Auth (10 req/15min)                                   │
+│  Adicional:                                                                 │
+│  └── Auth (JWT)    → Carlos Mejía                                          │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 1. Alex Ramírez - Microservicio Usuarios
+## Resumen de Tests (70 Total)
 
-**Módulo:** `functions/usuarios/` (Auth + Perfiles)
-
-### Checklist de Seguridad
-
-| # | Requerimiento | Estado | Cómo Implementar |
-|---|---------------|--------|------------------|
-| A1 | Helmet (headers seguridad) | ✅ OK | **Implementado por Erick Gaona (13/01/2026)** |
-| A2 | CORS restrictivo | ⚠️ PARCIAL | Cambiar `origin: true` → `['https://cail.ec']` |
-| A3 | Rate Limiting en Login | ✅ OK | **Implementado por Erick Gaona (13/01/2026)** - 10 intentos/15min |
-| A4 | Password 12+ caracteres | ⚠️ FALTA | Agregar validación en registro |
-| A5 | Validación de Email | ✅ OK | Ya existe en `Email.ts` |
-| A6 | Dockerfile no-root | ✅ OK | `USER nodejs` ya existe |
-| A7 | Hash con bcrypt | ✅ OK | Ya usa bcrypt 10 rounds |
-
-### 🧪 Tests Derivados (Erick crea, Alex implementa)
-
-| Test | Verifica Estándar | Estado Test | Estado Código |
-|------|-------------------|-------------|---------------|
-| Headers X-Frame-Options presente | A1 | ✅ Implementado | ✅ helmet (Erick) |
-| Headers X-Content-Type-Options presente | A1 | ✅ Implementado | ✅ helmet (Erick) |
-| CORS rechaza origen no permitido | A2 | ⏳ Pendiente | ⚠️ Parcial |
-| Login 11vo intento → 429 | A3 | ✅ Implementado | ✅ rate-limit (Erick) |
-| Login después 15min → OK | A3 | ✅ Implementado | ✅ rate-limit (Erick) |
-| Password < 12 chars → 400 | A4 | ⏳ Pendiente | ❌ No implementado |
-| Password sin mayúscula → 400 | A4 | ⏳ Pendiente | ❌ No implementado |
-| Password sin número → 400 | A4 | ⏳ Pendiente | ❌ No implementado |
-| Email inválido → 400 | A5 | ✅ Creado | ⚠️ Retorna 500 |
-
-**Total tests para Alex:** 9 tests
-
-### Código que DEBE agregar:
-
-```typescript
-// src/index.ts - AGREGAR al inicio
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-
-// Después de crear app
-app.use(helmet());
-
-// Rate limit para login
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
-  message: { error: 'Demasiados intentos, espere 15 minutos' }
-});
-app.use('/auth/login', loginLimiter);
-
-// CORS restrictivo (cambiar el actual)
-app.use(cors({
-  origin: ['https://cail.ec', 'https://app.cail.ec'],
-  credentials: true
-}));
 ```
-
-```typescript
-// Agregar validación de password en RegisterUser.usecase.ts
-const validatePassword = (password: string): void => {
-  if (password.length < 12) {
-    throw new AppError(400, 'Password debe tener mínimo 12 caracteres');
-  }
-  if (!/[A-Z]/.test(password)) {
-    throw new AppError(400, 'Password debe tener al menos una mayúscula');
-  }
-  if (!/[0-9]/.test(password)) {
-    throw new AppError(400, 'Password debe tener al menos un número');
-  }
-};
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    ESTADO DE TESTS - 13/01/2026                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  MÓDULO USUARIOS (Alex + Sebastián)                                         │
+│  ├── Tests de Seguridad: 22/22 ✅ PASAN                                     │
+│  └── Tests de Integración: 7 tests                                          │
+│  └── TOTAL: 29 tests                                                        │
+│                                                                             │
+│  MÓDULO OFERTAS (Erick + Carlos)                                            │
+│  ├── Tests de Seguridad: 17/17 ✅ PASAN                                     │
+│  └── Tests de Integración: 5 tests                                          │
+│  └── TOTAL: 22 tests                                                        │
+│                                                                             │
+│  MÓDULO MATCHING (Dara + Cristóbal)                                         │
+│  ├── Tests de Seguridad: 14/15 ⚠️ (1 falla - esperando implementación)     │
+│  └── Tests de Integración: 4 tests                                          │
+│  └── TOTAL: 19 tests                                                        │
+│                                                                             │
+│  ═══════════════════════════════════════════════════════════════════════    │
+│  TOTAL: 70 tests | 69 pasan (99%) | 1 falla (matching)                     │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Carlos Mejía - JWT y WSO2
+# DESGLOSE DETALLADO DE TESTS
 
-**Módulo:** Trabaja sobre `functions/usuarios/` (parte JWT)
+## 1. Tests de USUARIOS (29 tests)
 
-### Checklist de Seguridad
+### 1.1 Security Headers - Helmet (6 tests) ✅
 
-| # | Requerimiento | Estado | Evidencia |
-|---|---------------|--------|-----------|
-| C1 | Algoritmo JWT seguro | ✅ OK | HS256 (default) |
-| C2 | Expiración de tokens | ✅ OK | `expiresIn: '7d'` |
-| C3 | Validar firma JWT | ✅ OK | `jwt.verify()` |
-| C4 | Manejar TokenExpired | ✅ OK | Ya manejado |
-| C5 | No loguear tokens | ✅ OK | No se loguean |
-| C6 | WSO2 JWT Policy | ⚠️ PENDIENTE | Configurar en wso2/ |
+| # | Test | ¿Qué Verifica? | ¿Por qué es importante? |
+|---|------|----------------|-------------------------|
+| 1 | `X-Content-Type-Options: nosniff` | Que el header esté presente con valor "nosniff" | **Previene MIME sniffing**: Evita que el navegador "adivine" el tipo de archivo, previniendo que un archivo malicioso se ejecute como script |
+| 2 | `X-Frame-Options presente` | Que el header X-Frame-Options exista | **Previene Clickjacking**: Impide que tu sitio sea cargado en un iframe de otro sitio malicioso |
+| 3 | `X-XSS-Protection o CSP` | Que tenga alguna protección XSS | **Previene XSS**: Activa el filtro anti-XSS del navegador o usa CSP para controlar scripts |
+| 4 | `Content-Security-Policy` | Que el header CSP esté presente | **Controla recursos**: Define qué scripts, estilos e imágenes puede cargar la página |
+| 5 | `Strict-Transport-Security` | Que HSTS esté presente | **Fuerza HTTPS**: Obliga al navegador a usar siempre HTTPS, evitando ataques man-in-the-middle |
+| 6 | `NO expone X-Powered-By` | Que NO exista el header X-Powered-By | **Oculta tecnología**: No revelar que usamos Express/Node reduce información para atacantes |
 
-### 🧪 Tests Derivados (Erick crea, Carlos implementa)
+### 1.2 Rate Limiting (3 tests) ✅
 
-| Test | Verifica Estándar | Estado Test | Estado Código |
-|------|-------------------|-------------|---------------|
-| Token sin auth → 401 | C3 | ✅ Creado | ✅ Implementado |
-| Token malformado → 401 | C3 | ✅ Creado | ✅ Implementado |
-| Token sin Bearer → 401 | C3 | ✅ Creado | ✅ Implementado |
-| Token expirado → 401 | C4 | ✅ Creado | ✅ Implementado |
-| Algoritmo es HS256 | C1 | ⏳ Pendiente | ✅ Implementado |
-| Token expira en 7d | C2 | ⏳ Pendiente | ✅ Implementado |
+| # | Test | ¿Qué Verifica? | ¿Por qué es importante? |
+|---|------|----------------|-------------------------|
+| 7 | `Headers Rate Limit presentes` | Que las respuestas incluyan headers de límite | **Informa al cliente**: El cliente sabe cuántas peticiones le quedan |
+| 8 | `Rate Limit en /auth/login` | Que login tenga límite de intentos | **Previene brute force**: Un atacante no puede probar miles de contraseñas |
+| 9 | `Rate Limit en /auth/register` | Que register tenga límite | **Previene spam**: Evita creación masiva de cuentas falsas |
 
-**Total tests para Carlos:** 6 tests (4 creados, 2 pendientes)
+### 1.3 Auth Bypass Prevention (4 tests) ✅
 
-### Código existente (CORRECTO):
+| # | Test | ¿Qué Verifica? | ¿Por qué es importante? |
+|---|------|----------------|-------------------------|
+| 10 | `GET /users/profile sin token → 401` | Acceso sin autenticación es rechazado | **Protege datos**: Sin token válido, no puedes ver perfiles |
+| 11 | `Token malformado → 401` | Token inventado es rechazado | **Valida tokens**: No acepta cualquier string como token |
+| 12 | `Token sin "Bearer" → 401` | Formato incorrecto es rechazado | **Estándar OAuth2**: Requiere el prefijo Bearer según estándares |
+| 13 | `Authorization vacío → 401` | Header vacío es rechazado | **No acepta vacíos**: Debe haber un token real |
 
-```typescript
-// auth.middleware.ts - Ya está bien implementado
-export const authenticate = async (req, res, next) => {
-  const token = authHeader.substring(7);
-  const decoded = jwt.verify(token, config.jwt.secret);
-  req.user = decoded;
-  next();
-};
-```
+### 1.4 Input Validation (3 tests) ✅
 
-### Pendiente WSO2:
-- Configurar política JWT en WSO2 API Gateway
-- Todas las rutas deben validar JWT en el gateway
+| # | Test | ¿Qué Verifica? | ¿Por qué es importante? |
+|---|------|----------------|-------------------------|
+| 14 | `Email inválido → error` | "not-an-email" es rechazado | **Valida formato**: Solo acepta emails reales |
+| 15 | `Password vacío → error` | No permite password vacío | **Requiere password**: Cuenta sin password = vulnerable |
+| 16 | `Campos vacíos en login → error` | Login vacío falla | **Requiere credenciales**: No intenta autenticar sin datos |
 
----
+### 1.5 Injection Prevention (4 tests) ✅
 
-## 3. Juan Espinosa - Firestore y Usuarios
+| # | Test | ¿Qué Verifica? | ¿Por qué es importante? |
+|---|------|----------------|-------------------------|
+| 17 | `SQL Injection manejado` | `'; DROP TABLE users; --` no ejecuta SQL | **Previene borrado de datos**: Un atacante no puede ejecutar SQL |
+| 18 | `NoSQL Injection manejado` | `{"$gt": ""}` no ejecuta query | **Previene bypass auth**: No puede obtener datos con operadores NoSQL |
+| 19 | `XSS manejado` | `<script>alert("xss")</script>` no ejecuta | **Previene robo de sesión**: Scripts maliciosos no se ejecutan |
+| 20 | `Template Injection manejado` | `{{7*7}}` no evalúa templates | **Previene ejecución de código**: Templates maliciosos no funcionan |
 
-**Módulo:** Trabaja sobre `functions/usuarios/` (Firestore)
+### 1.6 Error Handling (2 tests) ✅
 
-### Checklist de Seguridad
+| # | Test | ¿Qué Verifica? | ¿Por qué es importante? |
+|---|------|----------------|-------------------------|
+| 21 | `No expone stack trace` | Errores no muestran código interno | **Oculta implementación**: Atacantes no ven rutas de archivos |
+| 22 | `No expone rutas internas` | No muestra `/src/` o `node_modules` | **Seguridad por oscuridad**: Menos información = menos vectores de ataque |
 
-| # | Requerimiento | Estado | Cómo Implementar |
-|---|---------------|--------|------------------|
-| J1 | Firestore Security Rules | ⚠️ VERIFICAR | Crear/verificar reglas |
-| J2 | Sanitizar datos | ⚠️ FALTA | `npm i sanitize-html` |
-| J3 | No IDs secuenciales | ✅ OK | Usa UUIDs |
-| J4 | Logs de auditoría | ⚠️ FALTA | Registrar cambios |
+### 1.7 Tests de Integración (7 tests)
 
-### 🧪 Tests Derivados (Erick crea, Juan implementa)
-
-| Test | Verifica Estándar | Estado Test | Estado Código |
-|------|-------------------|-------------|---------------|
-| SQL Injection no ejecuta | J2 | ✅ Creado | ✅ Firestore escapa |
-| NoSQL Injection no ejecuta | J2 | ✅ Creado | ✅ Firestore escapa |
-| XSS sanitizado | J2 | ✅ Creado | ⚠️ Parcial |
-| IDs son UUIDs no secuenciales | J3 | ⏳ Pendiente | ✅ Implementado |
-
-**Total tests para Juan:** 4 tests (3 creados, 1 pendiente)
-
-### Código que DEBE agregar:
-
-```javascript
-// firestore.rules - CREAR O VERIFICAR
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /cuentas/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    match /ofertas/{ofertaId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && 
-        get(/databases/$(database)/documents/cuentas/$(request.auth.uid)).data.tipoUsuario == 'RECLUTADOR';
-    }
-  }
-}
-```
+| # | Test | ¿Qué Verifica? |
+|---|------|----------------|
+| 23 | `GET /health → 200` | Servidor está funcionando |
+| 24 | `POST /auth/register crea usuario` | Registro funciona |
+| 25 | `POST /auth/login autentica` | Login funciona |
+| 26 | `Login con credenciales inválidas → 401` | Rechaza credenciales incorrectas |
+| 27 | `GET /users/profile con token → 200` | Perfil accesible con auth |
+| 28 | `GET /users/profile sin token → 401` | Perfil protegido |
+| 29 | `PUT /users/profile actualiza` | Actualización funciona |
 
 ---
 
-## 4. Sebastián Calderón - Perfiles de Usuario
+## 2. Tests de OFERTAS (22 tests)
 
-**Módulo:** Trabaja sobre `functions/usuarios/` (Perfiles)
+### 2.1 Security Headers - Helmet (3 tests) ✅
 
-### Checklist de Seguridad
+| # | Test | ¿Qué Verifica? | ¿Por qué es importante? |
+|---|------|----------------|-------------------------|
+| 1 | `X-Content-Type-Options: nosniff` | Header anti-MIME sniffing | Previene ejecución de archivos maliciosos |
+| 2 | `Content-Security-Policy` | CSP presente | Controla qué scripts pueden ejecutarse |
+| 3 | `NO expone X-Powered-By` | Oculta tecnología | No revela que usamos Node/Express |
 
-| # | Requerimiento | Estado | Cómo Implementar |
-|---|---------------|--------|------------------|
-| S1 | Upload CV solo PDF | ⚠️ VERIFICAR | Validar mimetype |
-| S2 | CV máximo 5MB | ⚠️ VERIFICAR | Configurar multer |
-| S3 | Validar cédula EC | ⚠️ FALTA | Algoritmo módulo 10 |
-| S4 | No exponer cédula completa | ⚠️ FALTA | Mostrar solo 4 dígitos |
+### 2.2 Rate Limiting (1 test) ✅
 
-### 🧪 Tests Derivados (Erick crea, Sebastián implementa)
+| # | Test | ¿Qué Verifica? | ¿Por qué es importante? |
+|---|------|----------------|-------------------------|
+| 4 | `Headers Rate Limit presentes` | Límite de peticiones activo | Previene abuso de la API |
 
-| Test | Verifica Estándar | Estado Test | Estado Código |
-|------|-------------------|-------------|---------------|
-| Upload archivo .exe → 400 | S1 | ⏳ Pendiente | ❌ No verificado |
-| Upload PDF > 5MB → 400 | S2 | ⏳ Pendiente | ❌ No verificado |
-| Cédula inválida → 400 | S3 | ⏳ Pendiente | ❌ No implementado |
-| Cédula válida → 200 | S3 | ⏳ Pendiente | ❌ No implementado |
-| Response muestra ****1234 | S4 | ⏳ Pendiente | ❌ No implementado |
-| GET /profile no expone cédula completa | S4 | ⏳ Pendiente | ❌ No implementado |
+### 2.3 Auth & Authorization (5 tests) ✅
 
-**Total tests para Sebastián:** 6 tests (0 creados)
+| # | Test | ¿Qué Verifica? | ¿Por qué es importante? |
+|---|------|----------------|-------------------------|
+| 5 | `POST /offers sin token → 401` | Crear oferta requiere auth | Solo usuarios autenticados crean ofertas |
+| 6 | `PUT /offers/:id sin token → 401` | Editar oferta requiere auth | Protege ofertas de edición anónima |
+| 7 | `DELETE /offers/:id sin token → 401` | Eliminar requiere auth | No se borran ofertas sin permiso |
+| 8 | `GET /offers/my-offers sin token → 401` | Mis ofertas requiere auth | Protege lista personal |
+| 9 | `Token inválido → 401` | Token falso rechazado | No acepta tokens inventados |
 
-### Código que DEBE agregar:
+### 2.4 Input Validation (2 tests) ✅
 
-```typescript
-// Validador de cédula ecuatoriana
-const validarCedulaEC = (cedula: string): boolean => {
-  if (!/^\d{10}$/.test(cedula)) return false;
-  const provincia = parseInt(cedula.substring(0, 2));
-  if (provincia < 1 || provincia > 24) return false;
-  
-  const coeficientes = [2, 1, 2, 1, 2, 1, 2, 1, 2];
-  let suma = 0;
-  for (let i = 0; i < 9; i++) {
-    let valor = parseInt(cedula.charAt(i)) * coeficientes[i];
-    if (valor > 9) valor -= 9;
-    suma += valor;
-  }
-  const verificador = (10 - (suma % 10)) % 10;
-  return verificador === parseInt(cedula.charAt(9));
-};
-```
+| # | Test | ¿Qué Verifica? | ¿Por qué es importante? |
+|---|------|----------------|-------------------------|
+| 10 | `limit=-1 manejado` | Parámetros negativos controlados | No crashea con valores inválidos |
+| 11 | `ID muy largo manejado` | ID de 1000 chars no causa problema | Previene buffer overflow |
 
----
+### 2.5 Injection Prevention (2 tests) ✅
 
-## 5. Carlos Mejía + Erick Gaona - Microservicio Ofertas
+| # | Test | ¿Qué Verifica? | ¿Por qué es importante? |
+|---|------|----------------|-------------------------|
+| 12 | `NoSQL Injection en query` | `{"$gt":""}` no funciona | Firestore escapa automáticamente |
+| 13 | `XSS en query params` | `<script>` no ejecuta | No hay XSS en búsquedas |
 
-**Módulo:** `functions/ofertas/`  
-**Responsables:** Carlos Mejía (código) + Erick Gaona (código + tests)
+### 2.6 Error Handling (2 tests) ✅
 
-### Checklist de Seguridad
+| # | Test | ¿Qué Verifica? | ¿Por qué es importante? |
+|---|------|----------------|-------------------------|
+| 14 | `Oferta inexistente → 404` | ID falso retorna 404 | Respuesta apropiada |
+| 15 | `No expone información sensible` | Sin stack trace en errores | Seguridad de información |
 
-| # | Requerimiento | Estado | Cómo Implementar |
-|---|---------------|--------|------------------|
-| E1 | Solo RECLUTADOR crea ofertas | ✅ OK | `authorize('RECLUTADOR')` |
-| E2 | Verificar propiedad | ✅ OK | Valida `idReclutador` |
-| E3 | Validar inputs | ⚠️ FALTA | `npm i express-validator` |
-| E4 | Sanitizar descripción | ⚠️ FALTA | `npm i sanitize-html` |
-| E5 | Paginación con límite | ⚠️ FALTA | Máximo 50 resultados |
+### 2.7 Public vs Protected (2 tests) ✅
 
-### 🧪 Tests Derivados (Erick crea Y implementa)
+| # | Test | ¿Qué Verifica? | ¿Por qué es importante? |
+|---|------|----------------|-------------------------|
+| 16 | `GET /offers funciona sin auth` | Lista pública de ofertas | Cualquiera puede ver ofertas |
+| 17 | `GET /offers/:id sin auth ≠ 401` | Detalle público | Ver oferta individual es público |
 
-| Test | Verifica Estándar | Estado Test | Estado Código |
-|------|-------------------|-------------|---------------|
-| POST /offers sin token → 401 | E1 | ⏳ Pendiente | ✅ Implementado |
-| POST /offers como POSTULANTE → 403 | E1 | ⏳ Pendiente | ✅ Implementado |
-| PUT /offers sin ser dueño → 403 | E2 | ⏳ Pendiente | ✅ Implementado |
-| DELETE /offers sin ser dueño → 403 | E2 | ⏳ Pendiente | ✅ Implementado |
-| Título < 5 chars → 400 | E3 | ⏳ Pendiente | ❌ No implementado |
-| Descripción < 50 chars → 400 | E3 | ⏳ Pendiente | ❌ No implementado |
-| Salario negativo → 400 | E3 | ⏳ Pendiente | ❌ No implementado |
-| XSS en descripción sanitizado | E4 | ⏳ Pendiente | ❌ No implementado |
-| GET /offers?limit=100 → máx 50 | E5 | ⏳ Pendiente | ❌ No implementado |
-| SQL Injection en búsqueda | General | ⏳ Pendiente | ✅ Firestore |
+### 2.8 Tests de Integración (5 tests)
 
-**Total tests para Erick (Ofertas):** 10 tests (0 creados)
-
-### Código que DEBO agregar:
-
-```typescript
-// validators/oferta.validator.ts - CREAR
-import { body, query } from 'express-validator';
-import sanitizeHtml from 'sanitize-html';
-
-export const crearOfertaValidator = [
-  body('titulo')
-    .isLength({ min: 5, max: 100 })
-    .trim()
-    .escape(),
-  body('descripcion')
-    .isLength({ min: 50, max: 5000 })
-    .customSanitizer(val => sanitizeHtml(val, {
-      allowedTags: ['b', 'i', 'ul', 'li', 'p'],
-      allowedAttributes: {}
-    })),
-  body('salarioMin')
-    .isNumeric()
-    .isFloat({ min: 0 }),
-  body('salarioMax')
-    .isNumeric()
-    .custom((val, { req }) => val >= req.body.salarioMin)
-];
-
-export const buscarOfertasValidator = [
-  query('limit')
-    .optional()
-    .isInt({ min: 1, max: 50 })
-    .toInt()
-];
-```
+| # | Test | ¿Qué Verifica? |
+|---|------|----------------|
+| 18 | `GET /health → 200` | Servidor funcionando |
+| 19 | `GET /offers retorna lista` | Lista de ofertas funciona |
+| 20 | `GET /offers con filtros` | Filtrado funciona |
+| 21 | `GET /offers/:id inválido → 404` | ID inexistente |
+| 22 | `POST /offers sin auth → 401` | Protección de creación |
 
 ---
 
-## 6. Cristóbal Espinosa - Microservicio Matching
+## 3. Tests de MATCHING (19 tests)
 
-**Módulo:** `functions/matching/`
+### 3.1 Security Headers - Helmet (3 tests) ✅
 
-### Checklist de Seguridad
+| # | Test | ¿Qué Verifica? | ¿Por qué es importante? |
+|---|------|----------------|-------------------------|
+| 1 | `X-Content-Type-Options: nosniff` | Header anti-MIME sniffing | Seguridad del navegador |
+| 2 | `Content-Security-Policy` | CSP presente | Control de scripts |
+| 3 | `NO expone X-Powered-By` | Oculta tecnología | Información mínima |
 
-| # | Requerimiento | Estado | Cómo Implementar |
-|---|---------------|--------|------------------|
-| D1 | Solo POSTULANTE puede postular | ⚠️ VERIFICAR | `authorize('POSTULANTE')` |
-| D2 | Una postulación por oferta | ⚠️ FALTA | Verificar duplicados |
-| D3 | Límite 10 postulaciones/día | ⚠️ FALTA | Contador diario |
-| D4 | Solo ofertas activas | ⚠️ VERIFICAR | Validar estado |
-| D5 | No exponer algoritmo | ✅ OK | Solo retorna score |
+### 3.2 Rate Limiting (1 test) ✅
 
-### 🧪 Tests Derivados (Erick crea, Cristóbal implementa)
+| # | Test | ¿Qué Verifica? | ¿Por qué es importante? |
+|---|------|----------------|-------------------------|
+| 4 | `Headers Rate Limit` | Límite activo | Previene spam de postulaciones |
 
-| Test | Verifica Estándar | Estado Test | Estado Código |
-|------|-------------------|-------------|---------------|
-| POST /apply sin token → 401 | D1 | ⏳ Pendiente | ⚠️ No verificado |
-| POST /apply como RECLUTADOR → 403 | D1 | ⏳ Pendiente | ⚠️ No verificado |
-| Postular a oferta inactiva → 400 | D4 | ⏳ Pendiente | ⚠️ No verificado |
-| Postulación duplicada → 409 | D2 | ⏳ Pendiente | ❌ No implementado |
-| 10 postulaciones/día OK | D3 | ⏳ Pendiente | ❌ No implementado |
-| 11va postulación → 429 | D3 | ⏳ Pendiente | ❌ No implementado |
-| Response solo tiene score | D5 | ⏳ Pendiente | ✅ Implementado |
+### 3.3 Auth Protection (5 tests) ⚠️
 
-**Total tests para Cristóbal:** 11 tests de seguridad CREADOS (10/11 pasan)
+| # | Test | ¿Qué Verifica? | Estado |
+|---|------|----------------|--------|
+| 5 | `POST /matching/apply sin token → 401` | Postular requiere auth | ✅ PASA |
+| 6 | `GET /matching/applications sin token → 401` | Ver aplicaciones requiere auth | ✅ PASA |
+| 7 | `GET /matching/my-applications sin token → 401` | Mis postulaciones requiere auth | ❌ FALLA (ruta no implementada) |
+| 8 | `Token inválido → 401` | Token falso rechazado | ✅ PASA |
+| 9 | `Token expirado → 401` | Token viejo rechazado | ✅ PASA |
 
-### Código que DEBE agregar:
+### 3.4 Input Validation (2 tests) ✅
 
-```typescript
-// Verificar postulación duplicada
-const existePostulacion = await db.collection('postulaciones')
-  .where('postulanteId', '==', userId)
-  .where('ofertaId', '==', ofertaId)
-  .get();
+| # | Test | ¿Qué Verifica? | ¿Por qué es importante? |
+|---|------|----------------|-------------------------|
+| 10 | `POST sin idOferta manejado` | Requiere ID de oferta | Validación de entrada |
+| 11 | `ID vacío manejado` | No crashea con vacío | Robustez |
 
-if (!existePostulacion.empty) {
-  throw new AppError(409, 'Ya te postulaste a esta oferta');
-}
+### 3.5 Injection Prevention (2 tests) ✅
 
-// Límite diario
-const hoy = new Date();
-hoy.setHours(0, 0, 0, 0);
-const countHoy = await db.collection('postulaciones')
-  .where('postulanteId', '==', userId)
-  .where('createdAt', '>=', hoy)
-  .count().get();
+| # | Test | ¿Qué Verifica? | ¿Por qué es importante? |
+|---|------|----------------|-------------------------|
+| 12 | `NoSQL Injection en idOferta` | `{"$gt":""}` no funciona | Seguridad de datos |
+| 13 | `XSS en parámetros` | Scripts no ejecutan | Previene XSS |
 
-if (countHoy.data().count >= 10) {
-  throw new AppError(429, 'Límite de postulaciones diarias alcanzado');
-}
-```
+### 3.6 Error Handling (2 tests) ✅
 
----
+| # | Test | ¿Qué Verifica? | ¿Por qué es importante? |
+|---|------|----------------|-------------------------|
+| 14 | `No expone stack trace` | Errores limpios | Seguridad información |
+| 15 | `Oferta inexistente → 404` | Respuesta apropiada | UX correcta |
 
-## Resumen de Estado
+### 3.7 Tests de Integración (4 tests)
 
-```
-┌───────────────────────────────────────────────────────────────────────────────┐
-│               PORCENTAJE DE CUMPLIMIENTO + TESTS                              │
-├───────────────────────────────────────────────────────────────────────────────┤
-│                                                                               │
-│  MÓDULO              Código Impl.    Tests Req.    Tests Creados             │
-│  ═══════════════════════════════════════════════════════════════════════════  │
-│  Usuarios (Auth)     ████████  60%     25 tests     13 creados (52%)         │
-│  Usuarios (Perfiles) ░░░░░░░░   0%      8 tests      0 creados ( 0%)         │
-│  Ofertas             ████░░░░  40%     15 tests      0 creados ( 0%)         │
-│  Matching            ██░░░░░░  20%     13 tests      0 creados ( 0%)         │
-│                                                                               │
-│  ═══════════════════════════════════════════════════════════════════════════  │
-│                                                                               │
-│  TOTAL CÓDIGO:     ~55% implementado                                          │
-│  TOTAL TESTS:      13/61 creados (21%)                                        │
-│                                                                               │
-│  Por Contribuidor (Código):                                                   │
-│  • Alex (Usuarios Auth):     43% implementado                                 │
-│  • Carlos (JWT + Ofertas):   70% implementado                                 │
-│  • Juan (Firestore):         25% implementado                                 │
-│  • Sebastián (Perfiles):      0% implementado                                 │
-│  • Erick (Ofertas + Tests):  40% implementado                                 │
-│  • Cristóbal (Matching):     Tests listos, esperando código                   │
-│                                                                               │
-│  🔴 BLOQUEADORES CRÍTICOS:                                                    │
-│  • A3 Rate Limiting - SIN IMPLEMENTAR (vulnerable a brute force)             │
-│  • A4 Password validation - SIN IMPLEMENTAR (passwords débiles)               │
-│                                                                               │
-└───────────────────────────────────────────────────────────────────────────────┘
-```
+| # | Test | ¿Qué Verifica? |
+|---|------|----------------|
+| 16 | `GET /health → 200` | Servidor funcionando |
+| 17 | `GET /matching/oferta/:id maneja inexistente` | Oferta no encontrada |
+| 18 | `POST /matching/apply sin auth → 401` | Protección |
+| 19 | `GET /matching/applications sin auth → 401` | Protección |
 
 ---
 
-## Responsabilidades de Testing
+## Responsabilidades por Contribuidor
 
-```
-┌───────────────────────────────────────────────────────────────────────────────┐
-│                    QUIÉN HACE QUÉ                                             │
-├───────────────────────────────────────────────────────────────────────────────┤
-│                                                                               │
-│  ERICK GAONA (Test & Security):                                               │
-│  ═══════════════════════════════                                              │
-│  ✅ Define los estándares de seguridad (este documento)                       │
-│  ✅ Crea TODOS los tests (61 tests en total)                                  │
-│  ✅ Ejecuta los tests y documenta resultados                                  │
-│  ✅ Reporta qué código falta implementar                                      │
-│  ✅ Implementa código del módulo Ofertas                                      │
-│                                                                               │
-│  CADA CONTRIBUIDOR:                                                           │
-│  ═══════════════════                                                          │
-│  ✅ Implementa el código según los estándares                                 │
-│  ✅ Cuando implemente, los tests de Erick PASARÁN                             │
-│  ❌ NO crea tests (eso lo hace Erick)                                         │
-│                                                                               │
-└───────────────────────────────────────────────────────────────────────────────┘
-```
+### Alex Ramírez + Sebastián Calderón - USUARIOS
 
----
+| Código que deben implementar | Estado |
+|------------------------------|--------|
+| CORS restrictivo (solo dominios permitidos) | ⚠️ Pendiente |
+| Validación password 12+ caracteres | ⚠️ Pendiente |
+| Validación cédula ecuatoriana | ⚠️ Pendiente |
+| Upload CV solo PDF y máx 5MB | ⚠️ Verificar |
 
-## 7. Sebastián Calderón - Frontend (React Native + Web)
+### Erick Gaona + Carlos Mejía - OFERTAS
 
-**Módulo:** `cail/src/` y `cail/web/`
+| Código implementado | Estado |
+|---------------------|--------|
+| Helmet (Security Headers) | ✅ Implementado |
+| Rate Limiting | ✅ Implementado |
+| Auth middleware | ✅ Implementado |
+| Autorización por rol | ✅ Implementado |
 
-### ✅ Lo que YA implementó correctamente:
+| Código pendiente | Estado |
+|------------------|--------|
+| express-validator para inputs | ⚠️ Pendiente |
+| Sanitizar descripción HTML | ⚠️ Pendiente |
+| Límite de paginación (máx 50) | ⚠️ Pendiente |
 
-| # | Requerimiento | Estado | Evidencia |
-|---|---------------|--------|-----------|
-| F1 | HTTPS para APIs | ✅ OK | `config.ts` usa `https://` |
-| F2 | Token Bearer automático | ✅ OK | `api.service.ts` interceptor |
-| F3 | Validación Password 12+ chars | ✅ OK | `PasswordStrength.tsx` |
-| F4 | Validación Password mayúscula | ✅ OK | `PasswordStrength.tsx` |
-| F5 | Validación Password número | ✅ OK | `PasswordStrength.tsx` |
-| F6 | Validación Password especial | ✅ OK | **Mejor de lo pedido** |
-| F7 | Timeout en requests | ✅ OK | 15 segundos |
-| F8 | Manejo centralizado errores | ✅ OK | `api.service.ts` |
+### Carlos Mejía - AUTH (JWT)
 
-### ⚠️ Lo que FALTA implementar:
+| Código implementado | Estado |
+|---------------------|--------|
+| Algoritmo HS256 | ✅ OK |
+| Expiración 7 días | ✅ OK |
+| Validación de firma | ✅ OK |
+| Manejo TokenExpired | ✅ OK |
 
-| # | Requerimiento | Estado | Cómo Implementar |
-|---|---------------|--------|------------------|
-| F9 | SecureStore para tokens | ⚠️ MEJORABLE | Cambiar `AsyncStorage` → `expo-secure-store` |
-| F10 | No console.log sensibles | ⚠️ VERIFICAR | Revisar y eliminar logs con datos |
-| F11 | Validar cédula EC | ❌ FALTA | Algoritmo módulo 10 en frontend |
-| F12 | Ocultar cédula en pantalla | ❌ FALTA | Mostrar solo `****1234` |
-| F13 | Upload CV solo PDF | ⚠️ VERIFICAR | Validar mimetype antes de enviar |
-| F14 | CV máximo 5MB | ⚠️ VERIFICAR | Verificar tamaño antes de upload |
+### Dara + Cristóbal Espinosa - MATCHING
 
-### Código que DEBE agregar:
-
-```typescript
-// Para F9: Cambiar almacenamiento de token
-// ANTES (actual):
-import AsyncStorage from '@react-native-async-storage/async-storage';
-await AsyncStorage.setItem(TOKEN_KEY, token);
-
-// DESPUÉS (más seguro):
-import * as SecureStore from 'expo-secure-store';
-await SecureStore.setItemAsync(TOKEN_KEY, token);
-```
-
-```typescript
-// Para F11: Validar cédula ecuatoriana en frontend
-const validarCedulaEC = (cedula: string): boolean => {
-  if (!/^\d{10}$/.test(cedula)) return false;
-  const provincia = parseInt(cedula.substring(0, 2));
-  if (provincia < 1 || provincia > 24) return false;
-  
-  const coeficientes = [2, 1, 2, 1, 2, 1, 2, 1, 2];
-  let suma = 0;
-  for (let i = 0; i < 9; i++) {
-    let valor = parseInt(cedula.charAt(i)) * coeficientes[i];
-    if (valor > 9) valor -= 9;
-    suma += valor;
-  }
-  const verificador = (10 - (suma % 10)) % 10;
-  return verificador === parseInt(cedula.charAt(9));
-};
-```
-
-```typescript
-// Para F12: Ocultar cédula en pantalla
-const ocultarCedula = (cedula: string): string => {
-  return '******' + cedula.slice(-4);
-};
-// Mostrar: ******1234
-```
-
-```typescript
-// Para F13 y F14: Validar archivo CV
-const validarCV = (file: File): { valid: boolean; error?: string } => {
-  const MAX_SIZE = 5 * 1024 * 1024; // 5MB
-  const ALLOWED_TYPES = ['application/pdf'];
-  
-  if (!ALLOWED_TYPES.includes(file.type)) {
-    return { valid: false, error: 'Solo se permiten archivos PDF' };
-  }
-  if (file.size > MAX_SIZE) {
-    return { valid: false, error: 'El archivo no puede superar 5MB' };
-  }
-  return { valid: true };
-};
-```
+| Código pendiente | Estado |
+|------------------|--------|
+| Ruta /matching/my-applications | ❌ Falta (causa 1 test fallido) |
+| Solo POSTULANTE puede postular | ⚠️ Verificar |
+| Verificar postulación duplicada | ⚠️ Pendiente |
+| Límite 10 postulaciones/día | ⚠️ Pendiente |
 
 ---
 
-## Comandos Útiles
+## Comandos de Ejecución
 
-```bash
-# Verificar vulnerabilidades
-npm audit
+```powershell
+# ===== EJECUTAR TODOS LOS TESTS =====
 
-# Ejecutar tests
-npm test
+# Usuarios (29 tests)
+cd "C:\Users\barce\Documents\mi brach\cail\cail\functions\usuarios"
+npm test --forceExit
 
-# Ejecutar tests con cobertura
-npm run test -- --coverage
+# Ofertas (22 tests)
+cd "C:\Users\barce\Documents\mi brach\cail\cail\functions\ofertas"
+npm test --forceExit
 
-# Ejecutar solo tests de seguridad
+# Matching (19 tests)
+cd "C:\Users\barce\Documents\mi brach\cail\cail\functions\matching"
+npm test --forceExit
+
+# ===== SOLO TESTS DE SEGURIDAD =====
+
+# Usuarios (22 tests seguridad)
+npx jest security --forceExit
+
+# Ofertas (17 tests seguridad)
+npx jest security --forceExit
+
+# Matching (15 tests seguridad)
 npx jest security --forceExit
 ```
 
 ---
 
-*Documento v8.0 - Actualizado con Frontend de Sebastián*  
+## Seguridad Implementada (Resumen)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    ✅ YA IMPLEMENTADO (por Erick)                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  🛡️  HELMET (Security Headers):                                            │
+│  ├── X-Content-Type-Options: nosniff                                        │
+│  ├── X-Frame-Options: SAMEORIGIN                                            │
+│  ├── Content-Security-Policy                                                │
+│  ├── Strict-Transport-Security (HSTS)                                       │
+│  ├── X-XSS-Protection                                                       │
+│  └── Oculta X-Powered-By                                                    │
+│                                                                             │
+│  ⏱️  RATE LIMITING:                                                         │
+│  ├── General: 100 peticiones / 15 minutos                                   │
+│  └── Auth: 10 peticiones / 15 minutos (login/register)                      │
+│                                                                             │
+│  📁 ARCHIVOS CREADOS:                                                       │
+│  ├── usuarios/src/shared/middleware/security.middleware.ts                  │
+│  ├── ofertas/src/shared/middleware/security.middleware.ts                   │
+│  └── matching/src/shared/middleware/security.middleware.ts                  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+*Documento v9.0 - Con desglose detallado de tests*  
 *Responsable: Erick Gaona (Test & Security)*

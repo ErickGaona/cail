@@ -4,9 +4,45 @@ import app from '../src/index';
 /**
  * Tests de Seguridad - Microservicio Matching
  * Responsable: Erick Gaona (Test & Security)
+ * Actualizado: 13/01/2026 - Agregados tests de Helmet y Rate Limiting
  */
 describe('Matching - Security Tests', () => {
 
+    // =========================================
+    // TESTS DE HELMET (Security Headers)
+    // =========================================
+    describe('Security Headers (Helmet)', () => {
+
+        it('Debe incluir X-Content-Type-Options: nosniff', async () => {
+            const response = await request(app).get('/health');
+            expect(response.headers['x-content-type-options']).toBe('nosniff');
+        });
+
+        it('Debe incluir Content-Security-Policy', async () => {
+            const response = await request(app).get('/health');
+            expect(response.headers['content-security-policy']).toBeDefined();
+        });
+
+        it('NO debe exponer X-Powered-By', async () => {
+            const response = await request(app).get('/health');
+            expect(response.headers['x-powered-by']).toBeUndefined();
+        });
+    });
+
+    // =========================================
+    // TESTS DE RATE LIMITING
+    // =========================================
+    describe('Rate Limiting', () => {
+
+        it('Debe incluir headers de Rate Limit', async () => {
+            const response = await request(app).get('/health');
+            expect(response.headers['ratelimit-limit'] || response.headers['x-ratelimit-limit']).toBeDefined();
+        });
+    });
+
+    // =========================================
+    // TESTS DE AUTH PROTECTION
+    // =========================================
     describe('Auth Protection', () => {
 
         it('POST /matching/apply sin token debe retornar 401', async () => {

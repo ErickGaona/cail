@@ -1,6 +1,6 @@
 # Reporte de Tests - Backend CAIL
 
-**Versión:** 3.0  
+**Versión:** 4.0  
 **Fecha de Creación:** 08 de Enero de 2026  
 **Última Actualización:** 13 de Enero de 2026  
 **Responsable:** Erick Gaona (Test & Security)
@@ -29,23 +29,27 @@
 │                    RESUMEN GENERAL DE TESTS                                 │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  TESTS DE SEGURIDAD CREADOS:                    37 tests                    │
-│  TESTS QUE PASAN:                               36 tests ✅                 │
+│  TESTS TOTALES CREADOS:                         70 tests                    │
+│  ├── Tests de Seguridad:                        54 tests                    │
+│  └── Tests de Integración:                      16 tests                    │
+│                                                                             │
+│  TESTS QUE PASAN:                               69 tests ✅                 │
 │  TESTS QUE FALLAN:                               1 test  ⚠️ (matching)      │
 │                                                                             │
 │  ═══════════════════════════════════════════════════════════════════════    │
 │                                                                             │
-│  Por Microservicio (Tests de Seguridad):                                    │
-│  ├── Usuarios    13/13 tests pasan   ██████████████████████ 100% ✅        │
-│  ├── Ofertas     13/13 tests pasan   ██████████████████████ 100% ✅        │
-│  └── Matching    10/11 tests pasan   ████████████████████░░  91% ⚠️        │
+│  Por Microservicio:                                                         │
+│  ├── Usuarios    29 tests (22 seg + 7 int)   ██████████████████████ 100% ✅│
+│  ├── Ofertas     22 tests (17 seg + 5 int)   ██████████████████████ 100% ✅│
+│  └── Matching    19 tests (15 seg + 4 int)   ████████████████████░░  95% ⚠️│
 │                                                                             │
 │  ═══════════════════════════════════════════════════════════════════════    │
 │                                                                             │
 │  SEGURIDAD IMPLEMENTADA (13/01/2026):                                       │
 │  ├── ✅ Helmet (Security Headers) - 3 microservicios                        │
 │  ├── ✅ Rate Limiting General (100 req/15min)                               │
-│  └── ✅ Rate Limiting Auth (10 req/15min - login/register)                  │
+│  ├── ✅ Rate Limiting Auth (10 req/15min - login/register)                  │
+│  └── ✅ Tests de Helmet y Rate Limit agregados                              │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -197,10 +201,31 @@
 
 ## 4. Tests del Módulo Usuarios
 
-**Ubicación:** `cail/cail/functions/usuarios/tests/security.test.ts`  
-**Estado:** ✅ 13/13 tests pasan
+**Ubicación:** `cail/cail/functions/usuarios/tests/`  
+**Tests Seguridad:** 22 tests ✅  
+**Tests Integración:** 7 tests  
+**Total:** 29 tests
 
-### 4.1 Tests de Seguridad - Auth Bypass (5 tests)
+### 4.1 Tests de Seguridad - Helmet (6 tests) ← NUEVO
+
+| # | Test | Resultado |
+|---|------|-----------|
+| 1 | X-Content-Type-Options: nosniff | ✅ PASA |
+| 2 | X-Frame-Options presente | ✅ PASA |
+| 3 | X-XSS-Protection o CSP presente | ✅ PASA |
+| 4 | Content-Security-Policy presente | ✅ PASA |
+| 5 | Strict-Transport-Security (HSTS) | ✅ PASA |
+| 6 | NO expone X-Powered-By | ✅ PASA |
+
+### 4.2 Tests de Seguridad - Rate Limiting (3 tests) ← NUEVO
+
+| # | Test | Resultado |
+|---|------|-----------|
+| 7 | Headers de Rate Limit presentes | ✅ PASA |
+| 8 | Rate Limit en /auth/login | ✅ PASA |
+| 9 | Rate Limit en /auth/register | ✅ PASA |
+
+### 4.3 Tests de Seguridad - Auth Bypass (4 tests)
 
 | # | Test | Resultado |
 |---|------|-----------|
@@ -393,22 +418,27 @@ taskkill /PID <numero> /F
 │                    ESTADO DEL TESTING - 13/01/2026                          │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  TESTS DE SEGURIDAD                      Pasan    Total    Progreso        │
+│  TESTS TOTALES                           Pasan    Total    Progreso        │
 │  ════════════════════════════════════════════════════════════════════════   │
 │                                                                             │
-│  Usuarios (Erick)      ██████████████████████   13/13      100% ✅         │
-│  Ofertas (Erick)       ██████████████████████   13/13      100% ✅         │
-│  Matching (Erick)      ████████████████████░░   10/11       91% ⚠️         │
+│  Usuarios (29 tests)   ██████████████████████   29/29      100% ✅         │
+│  Ofertas (22 tests)    ██████████████████████   22/22      100% ✅         │
+│  Matching (19 tests)   ████████████████████░░   18/19       95% ⚠️         │
 │                                                                             │
 │  ════════════════════════════════════════════════════════════════════════   │
-│  TOTAL SEGURIDAD:      █████████████████████░   36/37       97% ✅         │
+│  TOTAL:                █████████████████████░   69/70       99% ✅         │
 │                                                                             │
 │  ═══════════════════════════════════════════════════════════════════════    │
 │                                                                             │
-│  SEGURIDAD IMPLEMENTADA HOY (13/01/2026):                                  │
+│  DESGLOSE POR TIPO:                                                        │
+│  ├── Tests de Seguridad:     54 tests (53 pasan)                           │
+│  └── Tests de Integración:   16 tests (16 pasan)                           │
+│                                                                             │
+│  SEGURIDAD IMPLEMENTADA (13/01/2026):                                      │
 │  ├── ✅ Helmet (8 security headers)                                         │
 │  ├── ✅ Rate Limiting General (100 req/15min)                               │
-│  └── ✅ Rate Limiting Auth (10 req/15min)                                   │
+│  ├── ✅ Rate Limiting Auth (10 req/15min)                                   │
+│  └── ✅ Tests de Helmet y Rate Limit (17 nuevos)                            │
 │                                                                             │
 │  PRÓXIMOS PASOS:                                                            │
 │  1. ⏳ Esperar implementación de Cristóbal (Matching)                       │

@@ -1,50 +1,199 @@
-# Guía de Exposición - Seguridad Backend CAIL
+# Seguridad Implementada - Backend CAIL
 
-**Duración estimada:** 10-15 minutos  
+**Duracion estimada:** 10-15 minutos  
 **Fecha:** 14 de Enero de 2026  
 **Responsable:** Erick Gaona
 
 ---
 
-## 1. Introducción (1 min)
+## Tabla de Contenidos
 
-> "Implementamos seguridad en **4 capas** para proteger la aplicación desde el navegador hasta la base de datos."
+1. [Que estamos haciendo y por que](#1-que-estamos-haciendo-y-por-que)
+2. [Analogia: El Guardia de Seguridad](#2-analogia-el-guardia-de-seguridad)
+3. [Capa 1: API Gateway (WSO2)](#3-capa-1-api-gateway-wso2)
+4. [Capa 2: Headers de Seguridad (Helmet)](#4-capa-2-headers-de-seguridad-helmet)
+5. [Capa 3: Rate Limiting](#5-capa-3-rate-limiting-por-ruta)
+6. [Capa 4: Autenticacion JWT](#6-capa-4-autenticacion-jwt)
+7. [Validacion de Archivos](#7-validacion-de-archivos-upload-cv)
+8. [Passwords Seguros](#8-passwords-seguros-bcrypt)
+9. [Manejo de Errores](#9-manejo-de-errores-seguro)
+10. [Tests de Seguridad](#10-tests-de-seguridad)
+11. [Pasos de Implementacion WSO2](#11-pasos-de-implementacion-wso2)
+12. [Resumen Visual](#12-resumen-visual)
+
+---
+
+## 1. Que Estamos Haciendo y Por Que
+
+### La situacion ANTES (como funcionaba sin WSO2):
 
 ```
-Usuario → [WSO2 Gateway] → [Microservicios] → [Firebase]
-              ↓                   ↓
-         Rate Limit          Helmet + JWT
-         Throttling          Validaciones
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    ARQUITECTURA ACTUAL (Sin WSO2)                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│                         INTERNET                                            │
+│                            │                                                │
+│              ┌─────────────┼─────────────┐                                  │
+│              │             │             │                                  │
+│              ▼             ▼             ▼                                  │
+│         ┌────────┐    ┌────────┐    ┌────────┐                              │
+│         │Usuarios│    │Ofertas │    │Matching│                              │
+│         │ :8080  │    │ :8083  │    │ :8084  │                              │
+│         └────────┘    └────────┘    └────────┘                              │
+│                                                                             │
+│   ⚠️ PROBLEMA: Cada funcion esta expuesta directamente a internet           │
+│   ⚠️ PROBLEMA: No hay un punto central de control                           │
+│   ⚠️ PROBLEMA: Si quieres bloquear un atacante, tienes que hacerlo en 3     │
+│               lugares diferentes                                            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### La situacion DESPUES (con WSO2):
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    ARQUITECTURA CON WSO2                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│                         INTERNET                                            │
+│                            │                                                │
+│                            ▼                                                │
+│                   ┌─────────────────┐                                       │
+│                   │   WSO2 GATEWAY  │  ← UNICO PUNTO DE ENTRADA             │
+│                   │     :8243       │                                       │
+│                   │                 │                                       │
+│                   │ • Rate Limiting │                                       │
+│                   │ • Autenticacion │                                       │
+│                   │ • Logs          │                                       │
+│                   │ • Blacklist IPs │                                       │
+│                   └────────┬────────┘                                       │
+│                            │                                                │
+│              ┌─────────────┼─────────────┐                                  │
+│              │             │             │                                  │
+│              ▼             ▼             ▼                                  │
+│         ┌────────┐    ┌────────┐    ┌────────┐                              │
+│         │Usuarios│    │Ofertas │    │Matching│  ← YA NO EXPUESTOS           │
+│         │ :8080  │    │ :8083  │    │ :8084  │    DIRECTAMENTE              │
+│         └────────┘    └────────┘    └────────┘                              │
+│                                                                             │
+│   ✅ SOLUCION: Todo pasa por WSO2 primero                                   │
+│   ✅ SOLUCION: Un solo lugar para controlar todo                            │
+│   ✅ SOLUCION: Bloqueas un atacante una vez, afecta todas las APIs          │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Capa 1: API Gateway (WSO2)
+## 2. Analogia: El Guardia de Seguridad
 
-### ¿Qué es?
-Un "portero" que controla TODAS las peticiones antes de llegar a nuestros microservicios.
+### SIN GUARDIA (Sin WSO2):
 
-### ¿Qué protege?
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│   Visitante → Puerta Oficina 1 (Usuarios)                                   │
+│   Visitante → Puerta Oficina 2 (Ofertas)                                    │
+│   Visitante → Puerta Oficina 3 (Matching)                                   │
+│                                                                             │
+│   ⚠️ Cualquiera entra a cualquier oficina sin control                       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
-| Protección | Ejemplo |
-|------------|---------|
-| **Rate Limiting** | Máximo 100 peticiones por minuto por IP |
-| **Throttling** | Si hay muchas peticiones, las encola |
-| **Blacklist IPs** | Bloquea IPs maliciosas conocidas |
-| **Monitoreo** | Logs de todas las peticiones |
+### CON GUARDIA (Con WSO2):
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│   Visitante llega → RECEPCION (WSO2)                                        │
+│                           │                                                 │
+│                           ▼                                                 │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │                    CHECKLIST DEL GUARDIA                            │   │
+│   ├─────────────────────────────────────────────────────────────────────┤   │
+│   │                                                                     │   │
+│   │  1️⃣ ¿Vienes muy seguido? (RATE LIMITING)                            │   │
+│   │     ├── SI: "Ha venido 100 veces en 15 min, espere afuera"          │   │
+│   │     └── NO: ✅ Pasa al siguiente control                            │   │
+│   │                                                                     │   │
+│   │  2️⃣ ¿Tienes identificacion? (JWT TOKEN)                             │   │
+│   │     ├── NO: "No puede entrar sin credencial" → 401                  │   │
+│   │     ├── FALSA: "Esta credencial es falsa" → 401                     │   │
+│   │     └── SI: ✅ Pasa al siguiente control                            │   │
+│   │                                                                     │   │
+│   │  3️⃣ ¿Estas en la lista negra? (BLACKLIST IPs)                       │   │
+│   │     ├── SI: "Usted tiene prohibido el acceso" → 403                 │   │
+│   │     └── NO: ✅ Pasa al siguiente control                            │   │
+│   │                                                                     │   │
+│   │  4️⃣ ¿Tienes permiso para esta oficina? (ROLES)                      │   │
+│   │     ├── NO: "No tiene autorizacion para Ofertas" → 403              │   │
+│   │     └── SI: ✅ PUEDE PASAR                                          │   │
+│   │                                                                     │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│                           │                                                 │
+│                           ▼                                                 │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │  TODO OK → Guardia lo dirige a la oficina correcta                  │   │
+│   │            (Usuarios, Ofertas o Matching)                           │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│   📝 Ademas el guardia ANOTA TODO en su libreta (LOGS):                     │
+│      • Quien vino                                                           │
+│      • A que hora                                                           │
+│      • A que oficina fue                                                    │
+│      • Si lo dejaron pasar o no                                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Ejemplo Practico del Guardia:
+
+```
+ESCENARIO: Atacante intenta fuerza bruta en login
+
+Intento 1:  Guardia: "¿Credenciales?" → Incorrectas → "Intente de nuevo"
+Intento 2:  Guardia: "¿Credenciales?" → Incorrectas → "Intente de nuevo"
+...
+Intento 10: Guardia: "¿Credenciales?" → Incorrectas → "Intente de nuevo"
+Intento 11: Guardia: "ALTO! Ha fallado 10 veces. Espere 15 minutos"
+            → Atacante bloqueado → 429 Too Many Requests
+
+SIN GUARDIA: Atacante podria intentar 10,000 veces por segundo
+CON GUARDIA: Atacante limitado a 10 intentos cada 15 minutos
+             → 10,000 intentos = 25,000 minutos = 17 DIAS
+```
+
+---
+
+## 3. Capa 1: API Gateway (WSO2)
+
+### ¿Que es?
+El "portero" que controla TODAS las peticiones antes de llegar a los microservicios.
+
+### ¿Que protege?
+
+| Proteccion | Que hace | Ejemplo |
+|------------|----------|---------|
+| **Rate Limiting** | Limita peticiones por IP | Max 100 req/15min |
+| **Throttling** | Encola peticiones excesivas | Evita saturar servidores |
+| **Blacklist IPs** | Bloquea IPs maliciosas | Ban a 192.168.1.100 |
+| **Monitoreo** | Registra todo | Logs de quien, cuando, que |
 
 ### Ejemplo real:
 ```
 ❌ Ataque: 1000 peticiones/segundo desde IP 192.168.1.100
-✅ WSO2: Bloquea después de 100, retorna 429 Too Many Requests
+✅ WSO2: Bloquea despues de 100, retorna 429 Too Many Requests
 ```
 
 ---
 
-## 3. Capa 2: Headers de Seguridad (Helmet)
+## 4. Capa 2: Headers de Seguridad (Helmet)
 
-### ¿Qué es?
-Middleware que agrega headers HTTP de protección automáticamente.
+### ¿Que es?
+Middleware que agrega headers HTTP de proteccion automaticamente.
 
 ### Headers implementados:
 
@@ -52,42 +201,42 @@ Middleware que agrega headers HTTP de protección automáticamente.
 |--------|----------------|-------|
 | `X-Content-Type-Options` | MIME sniffing | `nosniff` |
 | `X-Frame-Options` | Clickjacking | `SAMEORIGIN` |
-| `Content-Security-Policy` | XSS, inyección | Política estricta |
+| `Content-Security-Policy` | XSS, inyeccion | Politica estricta |
 | `Strict-Transport-Security` | Man-in-the-middle | HTTPS forzado |
 | `X-Powered-By` | Fingerprinting | **Removido** |
 
-### Código implementado:
+### Codigo implementado:
 ```typescript
 // security.middleware.ts
 import helmet from 'helmet';
 
-app.use(helmet());  // ← Una línea, 6 protecciones
+app.use(helmet());  // ← Una linea, 6 protecciones
 ```
 
 ### Ejemplo real:
 ```
-❌ Sin Helmet: Atacante inyecta <script> en descripción de oferta
-✅ Con Helmet: CSP bloquea ejecución de scripts externos
+❌ Sin Helmet: Atacante inyecta <script> en descripcion de oferta
+✅ Con Helmet: CSP bloquea ejecucion de scripts externos
 ```
 
 ---
 
-## 4. Capa 3: Rate Limiting por Ruta
+## 5. Capa 3: Rate Limiting por Ruta
 
-### ¿Qué es?
-Límite de peticiones específico por endpoint crítico.
+### ¿Que es?
+Limite de peticiones especifico por endpoint critico.
 
-### Configuración:
+### Configuracion:
 
-| Endpoint | Límite | Ventana | ¿Por qué? |
+| Endpoint | Limite | Ventana | ¿Por que? |
 |----------|--------|---------|-----------|
 | `/auth/login` | 10 intentos | 15 min | Prevenir fuerza bruta |
 | `/auth/register` | 10 intentos | 15 min | Prevenir spam de cuentas |
 | General | 100 peticiones | 15 min | Uso normal |
 
-### Código implementado:
+### Codigo implementado:
 ```typescript
-// Rate limit para auth (más estricto)
+// Rate limit para auth (mas estricto)
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,  // 15 minutos
     max: 10,                    // 10 intentos
@@ -99,18 +248,18 @@ app.use('/auth', authLimiter);
 
 ### Ejemplo real:
 ```
-❌ Ataque: Script probando 10,000 contraseñas
-✅ Rate Limit: Bloquea después del intento #10
-   → Atacante tendría que esperar 15 min entre cada 10 intentos
-   → 10,000 contraseñas = 25,000 minutos = 17 días
+❌ Ataque: Script probando 10,000 passwords
+✅ Rate Limit: Bloquea despues del intento #10
+   → Atacante tendria que esperar 15 min entre cada 10 intentos
+   → 10,000 passwords = 25,000 minutos = 17 dias
 ```
 
 ---
 
-## 5. Capa 4: Autenticación JWT
+## 6. Capa 4: Autenticacion JWT
 
-### ¿Qué es?
-Token firmado que identifica al usuario en cada petición.
+### ¿Que es?
+Token firmado que identifica al usuario en cada peticion.
 
 ### Flujo:
 
@@ -118,7 +267,7 @@ Token firmado que identifica al usuario en cada petición.
 1. Usuario hace login con email/password
 2. Servidor valida credenciales con Firebase Auth
 3. Servidor genera JWT firmado con secreto
-4. Usuario envía JWT en cada petición
+4. Usuario envia JWT en cada peticion
 5. Servidor verifica firma antes de procesar
 ```
 
@@ -127,10 +276,10 @@ Token firmado que identifica al usuario en cada petición.
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.  ← Header (algoritmo)
 eyJ1aWQiOiIxMjMiLCJyb2xlIjoiUE9TVFVMQU  ← Payload (datos usuario)
 5URSIsImV4cCI6MTcwNTI1NjAwMH0.           
-SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQs ← Firma (verificación)
+SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQs ← Firma (verificacion)
 ```
 
-### Código implementado:
+### Codigo implementado:
 ```typescript
 // auth.middleware.ts
 export const authenticate = (req, res, next) => {
@@ -145,7 +294,7 @@ export const authenticate = (req, res, next) => {
         req.user = decoded;  // { uid, role, exp }
         next();
     } catch (error) {
-        return res.status(401).json({ error: 'Token inválido' });
+        return res.status(401).json({ error: 'Token invalido' });
     }
 };
 ```
@@ -158,20 +307,20 @@ export const authenticate = (req, res, next) => {
 
 ---
 
-## 6. Validación de Archivos (Upload CV)
+## 7. Validacion de Archivos (Upload CV)
 
-### ¿Qué es?
-Control estricto de qué archivos pueden subirse.
+### ¿Que es?
+Control estricto de que archivos pueden subirse.
 
 ### Validaciones:
 
-| Validación | Valor | ¿Por qué? |
+| Validacion | Valor | ¿Por que? |
 |------------|-------|-----------|
 | Tipo MIME | Solo `application/pdf` | Prevenir ejecutables |
-| Tamaño máx | 5 MB | Prevenir DoS por storage |
+| Tamano max | 5 MB | Prevenir DoS por storage |
 | Ruta | Autenticada | Solo usuarios registrados |
 
-### Código implementado:
+### Codigo implementado:
 ```typescript
 const upload = multer({
     storage: multer.memoryStorage(),
@@ -194,20 +343,20 @@ const upload = multer({
 
 ---
 
-## 7. Passwords Seguros (bcrypt)
+## 8. Passwords Seguros (bcrypt)
 
-### ¿Qué es?
-Algoritmo de hash que hace imposible recuperar la contraseña original.
+### ¿Que es?
+Algoritmo de hash que hace imposible recuperar la password original.
 
-### Características:
+### Caracteristicas:
 
 | Aspecto | Valor | Beneficio |
 |---------|-------|-----------|
 | Algoritmo | bcrypt | Resistente a GPU cracking |
 | Rounds | 10 | ~100ms por hash (lento intencionalmente) |
-| Salt | Automático | Cada password tiene hash único |
+| Salt | Automatico | Cada password tiene hash unico |
 
-### Código implementado:
+### Codigo implementado:
 ```typescript
 import bcrypt from 'bcrypt';
 
@@ -225,25 +374,25 @@ Hash: "$2b$10$N9qo8uLOickgx2ZMRZoMy..."
 
 ❌ Ataque: Obtener base de datos
 ✅ bcrypt: No puede revertir el hash a password original
-   → Fuerza bruta: 10^14 años para descifrar
+   → Fuerza bruta: 10^14 anos para descifrar
 ```
 
 ---
 
-## 8. Manejo de Errores Seguro
+## 9. Manejo de Errores Seguro
 
-### ¿Qué es?
-No exponer información sensible en mensajes de error.
+### ¿Que es?
+No exponer informacion sensible en mensajes de error.
 
-### Implementación:
+### Implementacion:
 
 | ❌ Inseguro | ✅ Seguro |
 |-------------|-----------|
-| `Error: Cannot read property 'id' of undefined at /src/users/controller.ts:45` | `Error: Ocurrió un error interno` |
-| `MongoError: duplicate key email_1` | `Error: El email ya está registrado` |
-| Stack trace completo | Solo mensaje genérico |
+| `Error at /src/users/controller.ts:45` | `Error interno del servidor` |
+| `MongoError: duplicate key email_1` | `El email ya esta registrado` |
+| Stack trace completo | Solo mensaje generico |
 
-### Código implementado:
+### Codigo implementado:
 ```typescript
 // error.middleware.ts
 app.use((error, req, res, next) => {
@@ -259,7 +408,7 @@ app.use((error, req, res, next) => {
 
 ---
 
-## 9. Tests de Seguridad
+## 10. Tests de Seguridad
 
 ### Resumen:
 
@@ -291,7 +440,71 @@ it('Token malformado debe retornar 401', async () => {
 
 ---
 
-## 10. Resumen Visual
+## 11. Pasos de Implementacion WSO2
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PASO 1: Desplegar WSO2                                      ✅ YA HECHO    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Que hicimos: docker-compose up -d wso2-apim                                │
+│  Resultado:   WSO2 corriendo en https://localhost:9443                      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PASO 2: Decirle a WSO2 que APIs existen                     ⏳ PENDIENTE   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Que haremos: Importar 3 archivos YAML que describen nuestras APIs          │
+│               (usuarios, ofertas, matching)                                 │
+│                                                                             │
+│  Estos archivos dicen:                                                      │
+│  • Que rutas existen (/auth/login, /offers, etc.)                          │
+│  • Que metodos aceptan (GET, POST, PUT, DELETE)                            │
+│  • Que parametros reciben                                                   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PASO 3: Decirle a WSO2 donde estan las funciones reales     ⏳ PENDIENTE   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Que haremos: Configurar los "endpoints" (direcciones de las funciones)    │
+│                                                                             │
+│  Le decimos a WSO2:                                                         │
+│  • "Cuando alguien pida /usuarios/*, envialo a localhost:8080"             │
+│  • "Cuando alguien pida /ofertas/*, envialo a localhost:8083"              │
+│  • "Cuando alguien pida /matching/*, envialo a localhost:8084"             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PASO 4: Publicar las APIs                                   ⏳ PENDIENTE   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Que haremos: Click en "Publish" para activar cada API                      │
+│                                                                             │
+│  Resultado: Las APIs quedan activas en el Gateway                           │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PASO 5: Probar que funciona                                 ⏳ AL FINAL    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ANTES:   POST http://localhost:8080/auth/login                             │
+│                 (directo a la funcion)                                      │
+│                                                                             │
+│  DESPUES: POST https://localhost:8243/usuarios/auth/login                   │
+│                 (pasa por WSO2 primero)                                     │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 12. Resumen Visual
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -301,7 +514,7 @@ it('Token malformado debe retornar 401', async () => {
 │  INTERNET                                                           │
 │      ↓                                                              │
 │  ┌─────────────────────────────────────────────────────────────┐   │
-│  │  WSO2 API GATEWAY                                            │   │
+│  │  WSO2 API GATEWAY (El Guardia)                              │   │
 │  │  • Rate Limiting global                                      │   │
 │  │  • Throttling                                                │   │
 │  │  • IP Blacklist                                              │   │
@@ -329,26 +542,26 @@ it('Token malformado debe retornar 401', async () => {
 
 ---
 
-## 11. Preguntas Frecuentes
+## 13. Preguntas Frecuentes
 
-**P: ¿Por qué no usamos un WAF completo?**
-> R: WSO2 + Helmet cubren el 90% de ataques comunes. Un WAF completo (Cloud Armor) se implementaría en producción.
+**P: ¿Por que no usamos un WAF completo?**
+> R: WSO2 + Helmet cubren el 90% de ataques comunes. Un WAF completo (Cloud Armor) se implementaria en produccion.
 
-**P: ¿Qué pasa si roban el JWT?**
-> R: Expira en 7 días. En producción agregaríamos refresh tokens y blacklist de tokens robados.
+**P: ¿Que pasa si roban el JWT?**
+> R: Expira en 7 dias. En produccion agregariamos refresh tokens y blacklist de tokens robados.
 
-**P: ¿Los passwords están seguros?**
-> R: Sí, bcrypt con 10 rounds. Ni nosotros podemos ver las contraseñas originales.
+**P: ¿Los passwords estan seguros?**
+> R: Si, bcrypt con 10 rounds. Ni nosotros podemos ver las passwords originales.
 
 ---
 
-## 12. Comandos para Demostrar
+## 14. Comandos para Demostrar
 
 ```bash
 # Ver headers de seguridad
 curl -I http://localhost:3001/health
 
-# Probar rate limiting (ejecutar 11 veces rápido)
+# Probar rate limiting (ejecutar 11 veces rapido)
 for i in {1..11}; do curl -X POST http://localhost:3001/auth/login; done
 
 # Ver WSO2 funcionando
@@ -360,5 +573,4 @@ cd cail/functions/usuarios && npm test
 
 ---
 
-*Documento creado para exposición del módulo de Seguridad - CAIL 2026*
-
+*Documento creado para exposicion del modulo de Seguridad - CAIL 2026*

@@ -7,6 +7,7 @@ import { colors } from '@/theme/colors';
 
 interface TermsScreenProps {
   onClose: () => void;
+  onBack?: () => void;
 }
 
 type Section = {
@@ -166,7 +167,7 @@ const sections: Section[] = [
   },
 ];
 
-export function TermsScreen({ onClose }: TermsScreenProps) {
+export function TermsScreen({ onClose, onBack }: TermsScreenProps) {
   const { contentWidth, horizontalGutter } = useResponsiveLayout();
 
   return (
@@ -180,6 +181,11 @@ export function TermsScreen({ onClose }: TermsScreenProps) {
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.headerLeft}>
+                {onBack && (
+                  <TouchableOpacity onPress={onBack} style={styles.closeButton} activeOpacity={0.8}>
+                    <Feather name="arrow-left" size={18} color={colors.textPrimary} />
+                  </TouchableOpacity>
+                )}
                 <View style={styles.badge}>
                   <Feather name="file-text" size={18} color={colors.candidateDark} />
                 </View>
@@ -188,9 +194,11 @@ export function TermsScreen({ onClose }: TermsScreenProps) {
                   <Text style={styles.subtitle}>Bolsa de Empleo CAIL · Versión 1.0</Text>
                 </View>
               </View>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton} activeOpacity={0.8}>
-                <Feather name="x" size={18} color={colors.textPrimary} />
-              </TouchableOpacity>
+              {!onBack && (
+                <TouchableOpacity onPress={onClose} style={styles.closeButton} activeOpacity={0.8}>
+                  <Feather name="x" size={18} color={colors.textPrimary} />
+                </TouchableOpacity>
+              )}
             </View>
 
             {/* Meta Info */}

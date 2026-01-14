@@ -7,10 +7,11 @@ import { UserRole } from '@/types';
 import { LoginForm } from './LoginForm';
 import { RegisterCandidateForm } from './RegisterCandidateForm';
 import { RegisterEmployerForm } from './RegisterEmployerForm';
+import { TermsScreen } from '../legal/TermsScreen';
 
 const logo = require('@/assets/logo.png');
 
-type AuthMode = 'select' | 'login' | 'register';
+type AuthMode = 'select' | 'login' | 'register' | 'terms';
 
 type AuthScreenProps = {
   onAuthSuccess: (role: UserRole, data: any) => void;
@@ -31,6 +32,15 @@ export function AuthScreen({ onAuthSuccess, onShowTerms }: AuthScreenProps) {
     onAuthSuccess(selectedRole, data);
   };
 
+  // Show terms before registration
+  const handleShowTermsForRegister = () => {
+    setMode('terms');
+  };
+
+  const handleTermsAccepted = () => {
+    setMode('register');
+  };
+
   const content = (
     <SafeAreaView style={styles.safe}>
       <ScrollView
@@ -39,112 +49,118 @@ export function AuthScreen({ onAuthSuccess, onShowTerms }: AuthScreenProps) {
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.inner, { maxWidth: contentWidth }]}>
-            {/* Hero Section */}
-            {mode === 'select' && (
-              <View style={styles.heroSection}>
-                {/* Logo Badge */}
-                <View style={styles.logoBadge}>
-                  <View style={styles.logoInner}>
-                    <Image source={logo} style={styles.logo} resizeMode="contain" />
-                  </View>
-                </View>
-
-                {/* Hero Text */}
-                <View style={styles.heroText}>
-                  <View style={styles.heroPill}>
-                    <Feather name="briefcase" size={14} color="#FFFFFF" />
-                    <Text style={styles.heroPillText}>CAIL</Text>
-                  </View>
-                  <Text style={styles.headline}>Bolsa de Empleo</Text>
-                  <Text style={styles.subtitle}>Cámara de Industrias de Loja</Text>
+          {/* Hero Section */}
+          {mode === 'select' && (
+            <View style={styles.heroSection}>
+              {/* Logo Badge */}
+              <View style={styles.logoBadge}>
+                <View style={styles.logoInner}>
+                  <Image source={logo} style={styles.logo} resizeMode="contain" />
                 </View>
               </View>
-            )}
 
-            {/* Selection Mode - Role Cards */}
-            {mode === 'select' ? (
-              <View style={[styles.selectionSection, (isTablet || isDesktop) && styles.selectionWide]}>
-                <View style={styles.roleCards}>
-                  <RoleCard
-                    title="Soy Candidato"
-                    description="Busco oportunidades laborales"
-                    icon="user"
-                    color="#0B7A4D"
-                    onPress={() => handleRoleSelect('candidate')}
-                  />
-                  
-                  <RoleCard
-                    title="Soy Empleador"
-                    description="Busco talento para mi empresa"
-                    icon="briefcase"
-                    color="#F59E0B"
-                    onPress={() => handleRoleSelect('employer')}
-                  />
+              {/* Hero Text */}
+              <View style={styles.heroText}>
+                <View style={styles.heroPill}>
+                  <Feather name="briefcase" size={14} color="#FFFFFF" />
+                  <Text style={styles.heroPillText}>CAIL</Text>
                 </View>
-
-                {/* Footer */}
-                <View style={styles.footer}>
-                  <Feather name="shield" size={16} color="rgba(255,255,255,0.6)" />
-                  <Text style={styles.footerText}>
-                    Conectando talento con oportunidades en Loja
-                  </Text>
-                </View>
+                <Text style={styles.headline}>Bolsa de Empleo</Text>
+                <Text style={styles.subtitle}>Cámara de Industrias de Loja</Text>
               </View>
-            ) : (
-              /* Login/Register Forms */
-              <View style={[styles.formCard, (isTablet || isDesktop) && styles.formCardWide]}>
-                {mode === 'login' && (
-                  <LoginForm
-                    role={selectedRole}
-                    onSuccess={handleSuccess}
-                    onBack={() => setMode('select')}
-                    onSwitchToRegister={() => setMode('register')}
-                  />
-                )}
-                {mode === 'register' && selectedRole === 'candidate' && (
-                  <RegisterCandidateForm
-                    onSuccess={handleSuccess}
-                    onBack={() => setMode('select')}
-                    onSwitchToLogin={() => setMode('login')}
-                  />
-                )}
-                {mode === 'register' && selectedRole === 'employer' && (
-                  <RegisterEmployerForm
-                    onSuccess={handleSuccess}
-                    onBack={() => setMode('select')}
-                    onSwitchToLogin={() => setMode('login')}
-                  />
-                )}
-              </View>
-            )}
+            </View>
+          )}
 
-            <View style={styles.legalContainer}>
-              <TouchableOpacity
-                onPress={onShowTerms}
-                activeOpacity={0.85}
+          {/* Selection Mode - Role Cards */}
+          {mode === 'select' ? (
+            <View style={[styles.selectionSection, (isTablet || isDesktop) && styles.selectionWide]}>
+              <View style={styles.roleCards}>
+                <RoleCard
+                  title="Soy Candidato"
+                  description="Busco oportunidades laborales"
+                  icon="user"
+                  color="#0B7A4D"
+                  onPress={() => handleRoleSelect('candidate')}
+                />
+
+                <RoleCard
+                  title="Soy Empleador"
+                  description="Busco talento para mi empresa"
+                  icon="briefcase"
+                  color="#F59E0B"
+                  onPress={() => handleRoleSelect('employer')}
+                />
+              </View>
+
+              {/* Footer */}
+              <View style={styles.footer}>
+                <Feather name="shield" size={16} color="rgba(255,255,255,0.6)" />
+                <Text style={styles.footerText}>
+                  Conectando talento con oportunidades en Loja
+                </Text>
+              </View>
+            </View>
+          ) : (
+            /* Login/Register Forms */
+            <View style={[styles.formCard, (isTablet || isDesktop) && styles.formCardWide]}>
+              {mode === 'login' && (
+                <LoginForm
+                  role={selectedRole}
+                  onSuccess={handleSuccess}
+                  onBack={() => setMode('select')}
+                  onSwitchToRegister={handleShowTermsForRegister}
+                />
+              )}
+              {mode === 'terms' && (
+                <TermsScreen
+                  onClose={handleTermsAccepted}
+                  onBack={() => setMode('login')}
+                />
+              )}
+              {mode === 'register' && selectedRole === 'candidate' && (
+                <RegisterCandidateForm
+                  onSuccess={handleSuccess}
+                  onBack={() => setMode('select')}
+                  onSwitchToLogin={() => setMode('login')}
+                />
+              )}
+              {mode === 'register' && selectedRole === 'employer' && (
+                <RegisterEmployerForm
+                  onSuccess={handleSuccess}
+                  onBack={() => setMode('select')}
+                  onSwitchToLogin={() => setMode('login')}
+                />
+              )}
+            </View>
+          )}
+
+          <View style={styles.legalContainer}>
+            <TouchableOpacity
+              onPress={onShowTerms}
+              activeOpacity={0.85}
+              style={[
+                styles.legalButton,
+                mode === 'select' ? styles.legalButtonHero : styles.legalButtonForm,
+              ]}
+            >
+              <Feather
+                name="file-text"
+                size={14}
+                color={mode === 'select' ? '#FFFFFF' : '#0F172A'}
+              />
+              <Text
                 style={[
-                  styles.legalButton,
-                  mode === 'select' ? styles.legalButtonHero : styles.legalButtonForm,
+                  styles.legalText,
+                  mode === 'select' ? styles.legalTextHero : styles.legalTextForm,
                 ]}
               >
-                <Feather
-                  name="file-text"
-                  size={14}
-                  color={mode === 'select' ? '#FFFFFF' : '#0F172A'}
-                />
-                <Text
-                  style={[
-                    styles.legalText,
-                    mode === 'select' ? styles.legalTextHero : styles.legalTextForm,
-                  ]}
-                >
-                  Términos y Condiciones
-                </Text>
-              </TouchableOpacity>
-            </View>
+                Términos y Condiciones
+              </Text>
+            </TouchableOpacity>
           </View>
-        </ScrollView>
-      </SafeAreaView>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 
   return mode === 'select' ? (

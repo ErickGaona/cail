@@ -253,22 +253,22 @@ En PRODUCCION (para usuarios):
 
 ### 4.1 ¿Que es un API Gateway?
 
-Un API Gateway es un punto de entrada unico para todas las APIs. Funciona como un "guardia de seguridad" que revisa todas las peticiones antes de dejarlas pasar.
+Un API Gateway es un punto de entrada unico para todas las APIs  que revisa todas las peticiones antes de dejarlas pasar.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                         ANALOGIA: EDIFICIO DE OFICINAS                      │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  SIN GUARDIA (Sin Gateway):                                                 │
+│   (Sin Gateway):                                                            │
 │  ┌─────────────────────────────────────────────────────────────┐            │
 │  │  Visitante → Oficina Usuarios                               │            │
 │  │  Visitante → Oficina Ofertas                                │            │
 │  │  Visitante → Oficina Matching                               │            │
-│  │  ⚠️ Cualquiera entra a cualquier oficina                    │            │
+│  │  ⚠️ Cualquiera entra a cualquier oficina                   │            │
 │  └─────────────────────────────────────────────────────────────┘            │
 │                                                                             │
-│  CON GUARDIA (Con Gateway):                                                 │
+│   (Con Gateway):                                                            │
 │  ┌─────────────────────────────────────────────────────────────┐            │
 │  │  Visitante → RECEPCION → "¿Tiene cita? ¿Identificacion?"   │            │
 │  │                 │                                           │            │

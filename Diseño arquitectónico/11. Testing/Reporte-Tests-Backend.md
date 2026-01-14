@@ -30,17 +30,17 @@
 │                    RESUMEN GENERAL DE TESTS                                 │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  TESTS TOTALES CREADOS:                         70 tests                    │
-│  ├── Tests de Seguridad:                        54 tests                    │
-│  └── Tests de Integración:                      16 tests                    │
+│  TESTS TOTALES CREADOS:                         66 tests                    │
+│  ├── Tests de Seguridad:                        50 tests                    │
+│  └── Tests de Integracion:                      16 tests                    │
 │                                                                             │
-│  TESTS QUE PASAN:                               69 tests ✅                 │
+│  TESTS QUE PASAN:                               65 tests ✅                 │
 │  TESTS QUE FALLAN:                               1 test  ⚠️ (matching)      │
 │                                                                             │
 │  ═══════════════════════════════════════════════════════════════════════    │
 │                                                                             │
 │  Por Microservicio:                                                         │
-│  ├── Usuarios    29 tests (22 seg + 7 int)   ██████████████████████ 100% ✅│
+│  ├── Usuarios    25 tests (18 seg + 7 int)   ██████████████████████ 100% ✅│
 │  ├── Ofertas     22 tests (17 seg + 5 int)   ██████████████████████ 100% ✅│
 │  └── Matching    19 tests (15 seg + 4 int)   ████████████████████░░  95% ⚠️│
 │                                                                             │
@@ -50,7 +50,8 @@
 │  ├── ✅ Helmet (Security Headers) - 3 microservicios                        │
 │  ├── ✅ Rate Limiting General (100 req/15min)                               │
 │  ├── ✅ Rate Limiting Auth (10 req/15min - login/register)                  │
-│  └── ✅ Tests de Helmet y Rate Limit agregados                              │
+│  ├── ✅ WSO2 API Gateway desplegado (local)                                 │
+│  └── ✅ Upload CV validado (PDF, max 5MB) - por Alex                        │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -68,26 +69,41 @@
 
 ## 2. Cambios Recientes (13/01/2026)
 
-### 2.1 Implementación de Seguridad - Erick Gaona
+### 2.1 Implementacion de Seguridad - Erick Gaona
 
 | Hora | Cambio | Archivos | Estado |
 |------|--------|----------|--------|
 | 13/01/2026 | Agregado **helmet** (Security Headers) | `security.middleware.ts` (x3) | ✅ Implementado |
 | 13/01/2026 | Agregado **express-rate-limit** | `security.middleware.ts` (x3) | ✅ Implementado |
 | 13/01/2026 | Rate Limit especial para Auth | `/auth/login`, `/auth/register` | ✅ Implementado |
+| 13/01/2026 | **WSO2 API Gateway desplegado** | `docker-compose.yml` | ✅ Funcionando |
 
-### 2.2 Archivos Creados
+### 2.2 Implementacion Upload CV - Alex Ramirez
+
+| Hora | Cambio | Archivos | Estado |
+|------|--------|----------|--------|
+| 13/01/2026 17:59 | Subida de CV con validacion | `users.routes.ts`, `Cv.controller.ts` | ✅ Implementado |
+| 13/01/2026 17:59 | Validacion solo PDF | `multer fileFilter` | ✅ Implementado |
+| 13/01/2026 17:59 | Limite 5MB | `multer limits` | ✅ Implementado |
+
+### 2.3 Archivos Creados/Modificados
 
 ```
-✅ NUEVOS (por Erick Gaona):
+✅ NUEVOS (por Erick Gaona - Seguridad):
 ├── cail/functions/usuarios/src/shared/middleware/security.middleware.ts
 ├── cail/functions/ofertas/src/shared/middleware/security.middleware.ts
 └── cail/functions/matching/src/shared/middleware/security.middleware.ts
 
-✅ MODIFICADOS (cambio mínimo +2 líneas):
-├── cail/functions/usuarios/src/index.ts (import + apply)
-├── cail/functions/ofertas/src/index.ts (import + apply)
-└── cail/functions/matching/src/index.ts (import + apply)
+✅ NUEVOS (por Alex Ramirez - Upload CV):
+├── cail/functions/usuarios/src/users/infrastructure/controllers/Cv.controller.ts
+└── cail/functions/usuarios/src/config/firebase.config.ts (Storage)
+
+✅ MODIFICADOS:
+├── cail/functions/usuarios/src/index.ts (security middleware)
+├── cail/functions/ofertas/src/index.ts (security middleware)
+├── cail/functions/matching/src/index.ts (security middleware)
+├── cail/functions/usuarios/src/users/infrastructure/routes/users.routes.ts (rutas CV)
+└── cail/infrastructure/docker-compose.yml (WSO2 latest)
 ```
 
 ### 2.3 Headers de Seguridad Agregados (helmet)
@@ -114,49 +130,61 @@
 
 ## 3. Matriz de Tests por Contribuidor
 
-### 3.1 Alex Ramírez - Microservicio Usuarios (Auth + Perfiles)
+### 3.1 Alex Ramirez + Sebastian Calderon - Microservicio Usuarios
 
-| # | Estándar | Descripción | Código Implementado | Test Creado | Resultado |
+| # | Estandar | Descripcion | Codigo Implementado | Test Creado | Resultado |
 |---|----------|-------------|---------------------|-------------|-----------|
-| A1 | Helmet | Headers de seguridad | ✅ SÍ (Erick) | ✅ SÍ | ✅ PASA |
+| A1 | Helmet | Headers de seguridad | ✅ SI (Erick) | ✅ SI | ✅ PASA |
 | A2 | CORS restrictivo | Solo dominios permitidos | ⚠️ PARCIAL (acepta todo) | ⏳ NO | - |
-| A3 | Rate Limiting Login | 10 intentos / 15 min | ✅ SÍ (Erick) | ⏳ NO | - |
-| A4 | Password 12+ chars | Validación de fortaleza | ❌ NO | ✅ SÍ | 🔄 Pasa pero no valida |
-| A5 | Validación Email | Formato correcto | ✅ SÍ | ✅ SÍ | 🔄 Pasa pero retorna 500 |
-| A6 | Dockerfile no-root | Usuario nodejs | ✅ SÍ | ⏳ NO | - |
-| A7 | Hash bcrypt | 10+ rounds | ✅ SÍ | ⏳ NO | - |
+| A3 | Rate Limiting Login | 10 intentos / 15 min | ✅ SI (Erick) | ✅ SI | ✅ PASA |
+| A4 | Password 12+ chars | Validacion de fortaleza | ❌ NO | ✅ SI | 🔄 Pasa pero no valida |
+| A5 | Validacion Email | Formato correcto | ✅ SI | ✅ SI | 🔄 Pasa pero retorna 500 |
+| A6 | Dockerfile no-root | Usuario nodejs | ✅ SI | ⏳ NO | - |
+| A7 | Hash bcrypt | 10+ rounds | ✅ SI | ⏳ NO | - |
+| A8 | Upload CV solo PDF | Validar mimetype | ✅ SI (Alex 13/01) | ⏳ NO | - |
+| A9 | CV maximo 5MB | Limite de tamanio | ✅ SI (Alex 13/01) | ⏳ NO | - |
 
-**Resumen Alex:** 5/7 implementados (2 por Erick), 3/7 tests creados
+**Resumen Alex + Sebastian:** 7/9 implementados (2 por Erick, 2 por Alex), 4/9 tests creados
 
----
-
-### 3.2 Carlos Mejía - Módulo Ofertas + JWT
-
-| # | Estándar | Descripción | Código Implementado | Test Creado | Resultado |
-|---|----------|-------------|---------------------|-------------|-----------|
-| C1 | Algoritmo JWT seguro | HS256 | ✅ SÍ | ⏳ NO | - |
-| C2 | Expiración tokens | 7 días | ✅ SÍ | ⏳ NO | - |
-| C3 | Validar firma JWT | jwt.verify() | ✅ SÍ | ✅ SÍ | ✅ PASA |
-| C4 | Manejar TokenExpired | Error handling | ✅ SÍ | ✅ SÍ | ✅ PASA |
-| C5 | No loguear tokens | Sin console.log | ✅ SÍ | ⏳ NO | - |
-| C6 | Solo RECLUTADOR crea ofertas | authorize() | ✅ SÍ | ✅ SÍ | ✅ PASA |
-| C7 | Verificar propiedad oferta | idReclutador | ✅ SÍ | ✅ SÍ | ✅ PASA |
-
-**Resumen Carlos:** 7/7 implementados, 4/7 tests creados (13 tests seguridad ofertas)
+**Cambios recientes de Alex (13/01/2026):**
+- ✅ Implemento subida de CV con validacion PDF
+- ✅ Implemento limite de 5MB para archivos
+- ✅ Rutas protegidas con authenticate
+- Archivos: `users.routes.ts`, `Cv.controller.ts`
 
 ---
 
-### 3.3 Cristóbal Espinosa - Microservicio Matching
+### 3.2 Erick Gaona + Carlos Mejia - Modulo Ofertas + JWT
 
-| # | Estándar | Descripción | Código Implementado | Test Creado | Resultado |
+| # | Estandar | Descripcion | Codigo Implementado | Test Creado | Resultado |
 |---|----------|-------------|---------------------|-------------|-----------|
-| CR1 | Solo POSTULANTE postula | authorize() | ⏳ Pendiente | ✅ SÍ | ⚠️ Esperando código |
-| CR2 | Una postulación/oferta | Verificar duplicados | ⏳ Pendiente | ⏳ NO | - |
-| CR3 | Límite postulaciones/día | Contador diario | ⏳ Pendiente | ⏳ NO | - |
-| CR4 | Solo ofertas activas | Validar estado | ⏳ Pendiente | ✅ SÍ | ❌ Falla (404 no implementado) |
+| C1 | Algoritmo JWT seguro | HS256 | ✅ SI (Carlos) | ⏳ NO | - |
+| C2 | Expiracion tokens | 7 dias | ✅ SI (Carlos) | ⏳ NO | - |
+| C3 | Validar firma JWT | jwt.verify() | ✅ SI (Carlos) | ✅ SI | ✅ PASA |
+| C4 | Manejar TokenExpired | Error handling | ✅ SI (Carlos) | ✅ SI | ✅ PASA |
+| C5 | No loguear tokens | Sin console.log | ✅ SI | ⏳ NO | - |
+| C6 | Solo RECLUTADOR crea ofertas | authorize() | ✅ SI | ✅ SI | ✅ PASA |
+| C7 | Verificar propiedad oferta | idReclutador | ✅ SI | ✅ SI | ✅ PASA |
+| C8 | Helmet (headers) | Security headers | ✅ SI (Erick) | ✅ SI | ✅ PASA |
+| C9 | Rate Limiting | Limite peticiones | ✅ SI (Erick) | ✅ SI | ✅ PASA |
+
+**Resumen Erick + Carlos:** 9/9 implementados, 6/9 tests creados (17 tests seguridad ofertas)
+
+---
+
+### 3.3 Dara + Cristobal Espinosa - Microservicio Matching
+
+| # | Estandar | Descripcion | Codigo Implementado | Test Creado | Resultado |
+|---|----------|-------------|---------------------|-------------|-----------|
+| CR1 | Solo POSTULANTE postula | authorize() | ⏳ Pendiente | ✅ SI | ⚠️ Esperando codigo |
+| CR2 | Una postulacion/oferta | Verificar duplicados | ⏳ Pendiente | ⏳ NO | - |
+| CR3 | Limite postulaciones/dia | Contador diario | ⏳ Pendiente | ⏳ NO | - |
+| CR4 | Solo ofertas activas | Validar estado | ⏳ Pendiente | ✅ SI | ❌ Falla (ruta no implementada) |
 | CR5 | No exponer algoritmo | Solo score | ⏳ Pendiente | ⏳ NO | - |
+| CR6 | Helmet (headers) | Security headers | ✅ SI (Erick) | ✅ SI | ✅ PASA |
+| CR7 | Rate Limiting | Limite peticiones | ✅ SI (Erick) | ✅ SI | ✅ PASA |
 
-**Resumen Cristóbal:** Código pendiente de subir. 11 tests de seguridad YA CREADOS esperando implementación.
+**Resumen Dara + Cristobal:** 2/7 implementados (por Erick). 15 tests de seguridad creados, 1 falla (ruta /my-applications no existe).
 
 ---
 
@@ -188,15 +216,17 @@
 
 ### 3.6 Erick Gaona - Test & Security
 
-| # | Estándar | Descripción | Código Implementado | Test Creado | Resultado |
+| # | Estandar | Descripcion | Codigo Implementado | Test Creado | Resultado |
 |---|----------|-------------|---------------------|-------------|-----------|
-| E1 | Helmet implementado | Security headers | ✅ SÍ | ✅ SÍ | ✅ PASA |
-| E2 | Rate Limiting | Prevenir fuerza bruta | ✅ SÍ | ⏳ NO | - |
-| E3 | Tests seguridad Usuarios | 13 tests | ✅ SÍ | ✅ SÍ | ✅ 13/13 PASAN |
-| E4 | Tests seguridad Ofertas | 13 tests | ✅ SÍ | ✅ SÍ | ✅ 13/13 PASAN |
-| E5 | Tests seguridad Matching | 11 tests | ✅ SÍ | ✅ SÍ | ⚠️ 10/11 PASAN |
+| E1 | Helmet implementado | Security headers (3 microservicios) | ✅ SI | ✅ SI | ✅ PASA |
+| E2 | Rate Limiting General | 100 req/15min | ✅ SI | ✅ SI | ✅ PASA |
+| E3 | Rate Limiting Auth | 10 req/15min (login/register) | ✅ SI | ✅ SI | ✅ PASA |
+| E4 | Tests seguridad Usuarios | 18 tests | ✅ SI | ✅ SI | ✅ 18/18 PASAN |
+| E5 | Tests seguridad Ofertas | 17 tests | ✅ SI | ✅ SI | ✅ 17/17 PASAN |
+| E6 | Tests seguridad Matching | 15 tests | ✅ SI | ✅ SI | ⚠️ 14/15 PASAN |
+| E7 | WSO2 API Gateway | Despliegue local | ✅ SI | - | ✅ Funcionando |
 
-**Resumen Erick:** 5/5 completados, 37 tests creados
+**Resumen Erick:** 7/7 completados, 50 tests de seguridad creados (49 pasan)
 
 ---
 
@@ -610,29 +640,31 @@ docker-compose restart wso2-apim
 │  TESTS TOTALES                           Pasan    Total    Progreso        │
 │  ════════════════════════════════════════════════════════════════════════   │
 │                                                                             │
-│  Usuarios (29 tests)   ██████████████████████   29/29      100% ✅         │
+│  Usuarios (25 tests)   ██████████████████████   25/25      100% ✅         │
 │  Ofertas (22 tests)    ██████████████████████   22/22      100% ✅         │
 │  Matching (19 tests)   ████████████████████░░   18/19       95% ⚠️         │
 │                                                                             │
 │  ════════════════════════════════════════════════════════════════════════   │
-│  TOTAL:                █████████████████████░   69/70       99% ✅         │
+│  TOTAL:                █████████████████████░   65/66       98% ✅         │
 │                                                                             │
 │  ═══════════════════════════════════════════════════════════════════════    │
 │                                                                             │
 │  DESGLOSE POR TIPO:                                                        │
-│  ├── Tests de Seguridad:     54 tests (53 pasan)                           │
-│  └── Tests de Integración:   16 tests (16 pasan)                           │
+│  ├── Tests de Seguridad:     50 tests (49 pasan)                           │
+│  └── Tests de Integracion:   16 tests (16 pasan)                           │
 │                                                                             │
 │  SEGURIDAD IMPLEMENTADA (13/01/2026):                                      │
-│  ├── ✅ Helmet (8 security headers)                                         │
+│  ├── ✅ Helmet (8 security headers) - 3 microservicios                      │
 │  ├── ✅ Rate Limiting General (100 req/15min)                               │
 │  ├── ✅ Rate Limiting Auth (10 req/15min)                                   │
-│  └── ✅ Tests de Helmet y Rate Limit (17 nuevos)                            │
+│  ├── ✅ WSO2 API Gateway desplegado                                         │
+│  └── ✅ Upload CV validado (PDF, 5MB) - Alex                                │
 │                                                                             │
-│  PRÓXIMOS PASOS:                                                            │
-│  1. ⏳ Esperar implementación de Cristóbal (Matching)                       │
-│  2. ⏳ Notificar a Alex sobre validación de passwords                       │
-│  3. ⏳ Agregar express-validator a todos los módulos                        │
+│  PROXIMOS PASOS:                                                            │
+│  1. ⏳ Esperar implementacion de Dara/Cristobal (Matching)                  │
+│  2. ⏳ Notificar a Alex sobre validacion de passwords                       │
+│  3. ⏳ Importar APIs en WSO2 Gateway                                        │
+│  4. ⏳ Agregar express-validator a todos los modulos                        │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```

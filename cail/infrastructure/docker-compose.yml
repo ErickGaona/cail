@@ -8,7 +8,7 @@ services:
   # WSO2 API Manager (All-in-One para desarrollo)
   # ============================================
   wso2-apim:
-    image: wso2/wso2am:4.2.0
+    image: wso2/wso2am:latest
     container_name: wso2-api-manager
     hostname: wso2-apim
     ports:
@@ -16,11 +16,7 @@ services:
       - "8280:8280"   # HTTP Gateway
       - "8243:8243"   # HTTPS Gateway
       - "9763:9763"   # HTTP Management
-    environment:
-      - PROFILE_NAME=default
-    volumes:
-      - ./wso2/deployment.toml:/home/wso2carbon/wso2am-4.2.0/repository/conf/deployment.toml:ro
-      - wso2-apim-data:/home/wso2carbon/wso2am-4.2.0/repository/database
+    # Usando configuración por defecto de WSO2 4.6.0
     networks:
       - cail-network
     healthcheck:

@@ -17,6 +17,7 @@
 6. [Tests del Módulo Matching](#6-tests-del-módulo-matching)
 7. [Resumen de Hallazgos](#7-resumen-de-hallazgos)
 8. [Comandos de Ejecución](#8-comandos-de-ejecución)
+9. [Despliegue WSO2 API Gateway](#9-despliegue-wso2-api-gateway) ← **NUEVO**
 
 ---
 
@@ -408,6 +409,194 @@ npm test --forceExit
 netstat -ano | findstr :8080
 taskkill /PID <numero> /F
 ```
+
+---
+
+## 9. Despliegue WSO2 API Gateway
+
+### 9.1 Estado del Despliegue (13/01/2026)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    ✅ WSO2 API GATEWAY DESPLEGADO                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Fecha: 13 de Enero 2026                                                    │
+│  Responsable: Erick Gaona                                                   │
+│  Estado: ✅ FUNCIONANDO                                                      │
+│                                                                             │
+│  Contenedor: wso2-api-manager                                               │
+│  Imagen: wso2/wso2am:latest (v4.6.0)                                        │
+│  Estado: healthy                                                            │
+│                                                                             │
+│  Puertos:                                                                   │
+│  • 9443 → Portal Admin/Publisher (HTTPS)                                    │
+│  • 8243 → Gateway HTTPS (APIs)                                              │
+│  • 8280 → Gateway HTTP (APIs)                                               │
+│                                                                             │
+│  Acceso: https://localhost:9443/publisher                                   │
+│  Credenciales: admin / admin                                                │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 9.2 ¿Qué es WSO2 y para qué sirve?
+
+WSO2 API Gateway actúa como **punto único de entrada** para todas las APIs. Es como el "guardia de seguridad" del sistema.
+
+#### Arquitectura ANTES (Sin WSO2):
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         INTERNET                                            │
+│                            │                                                │
+│              ┌─────────────┼─────────────┐                                  │
+│              │             │             │                                  │
+│              ▼             ▼             ▼                                  │
+│         ┌────────┐    ┌────────┐    ┌────────┐                              │
+│         │Usuarios│    │Ofertas │    │Matching│                              │
+│         │ :8080  │    │ :8083  │    │ :8084  │                              │
+│         └────────┘    └────────┘    └────────┘                              │
+│                                                                             │
+│   ⚠️ PROBLEMA: Cada función expuesta directamente                           │
+│   ⚠️ PROBLEMA: No hay punto central de control                              │
+│   ⚠️ PROBLEMA: Seguridad distribuida en cada función                        │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Arquitectura DESPUÉS (Con WSO2):
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         INTERNET                                            │
+│                            │                                                │
+│                            ▼                                                │
+│                   ┌─────────────────┐                                       │
+│                   │   WSO2 GATEWAY  │  ← ÚNICO PUNTO DE ENTRADA             │
+│                   │     :8243       │                                       │
+│                   │                 │                                       │
+│                   │ • Rate Limiting │                                       │
+│                   │ • Autenticación │                                       │
+│                   │ • Logs          │                                       │
+│                   │ • Blacklist IPs │                                       │
+│                   │ • Throttling    │                                       │
+│                   └────────┬────────┘                                       │
+│                            │                                                │
+│              ┌─────────────┼─────────────┐                                  │
+│              │             │             │                                  │
+│              ▼             ▼             ▼                                  │
+│         ┌────────┐    ┌────────┐    ┌────────┐                              │
+│         │Usuarios│    │Ofertas │    │Matching│  ← NO EXPUESTOS              │
+│         │ :8080  │    │ :8083  │    │ :8084  │    DIRECTAMENTE              │
+│         └────────┘    └────────┘    └────────┘                              │
+│                                                                             │
+│   ✅ SOLUCIÓN: Todo pasa por WSO2 primero                                   │
+│   ✅ SOLUCIÓN: Control centralizado                                         │
+│   ✅ SOLUCIÓN: Un solo lugar para políticas de seguridad                    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 9.3 Ejemplos Prácticos de Protección
+
+#### Ejemplo 1: Ataque de Fuerza Bruta
+
+| Sin WSO2 | Con WSO2 |
+|----------|----------|
+| Atacante hace 1000 requests a `/auth/login` | Atacante hace 10 requests... |
+| Cada función cuenta sus propios intentos | ...y WSO2 lo bloquea: `429 Too Many Requests` |
+| Si reinicia la función, el contador se pierde | El bloqueo persiste en el Gateway |
+
+#### Ejemplo 2: Bloquear IP Maliciosa
+
+| Sin WSO2 | Con WSO2 |
+|----------|----------|
+| Bloquear IP en cada función (3 cambios) | Bloquear en WSO2 → afecta TODAS las APIs |
+| Requiere redeploy de código | Se configura en el portal, sin tocar código |
+
+#### Ejemplo 3: Monitoreo Centralizado
+
+| Sin WSO2 | Con WSO2 |
+|----------|----------|
+| Logs dispersos en cada función | Dashboard único con TODO el tráfico |
+| "¿Cuántos logins hubo hoy?" → revisar 3 logs | Un click en el portal de analytics |
+
+### 9.4 Capas de Seguridad Implementadas
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    CAPAS DE SEGURIDAD - CAIL                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  CAPA 1: Network Firewall (GCP)                          ✅ AUTOMÁTICO      │
+│  └── Bloquea puertos, IPs a nivel de red                                    │
+│                                                                             │
+│  CAPA 2: API Gateway (WSO2)                              ✅ DESPLEGADO      │
+│  └── Rate limiting, autenticación, throttling centralizado                  │
+│                                                                             │
+│  CAPA 3: Application Security (Helmet + Rate Limit)      ✅ IMPLEMENTADO    │
+│  └── Headers de seguridad, protección a nivel de código                     │
+│                                                                             │
+│  CAPA 4: WAF Empresarial (Cloud Armor)                   ⏳ OPCIONAL        │
+│  └── Detección de ataques con IA (para producción real)                     │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 9.5 Funcionalidades de WSO2 Gateway
+
+| Funcionalidad | Descripción | Estado |
+|---------------|-------------|--------|
+| Rate Limiting | Límite de peticiones por IP/usuario | ✅ Disponible |
+| Throttling | Control de tráfico por políticas | ✅ Disponible |
+| Blacklist IPs | Bloquear IPs maliciosas | ✅ Disponible |
+| Autenticación JWT | Validar tokens en el gateway | ✅ Disponible |
+| Logs Centralizados | Todas las peticiones registradas | ✅ Disponible |
+| Analytics | Dashboard de métricas | ✅ Disponible |
+| API Versioning | Manejar versiones de APIs | ✅ Disponible |
+
+### 9.6 Comandos de Gestión
+
+```powershell
+# === VERIFICAR ESTADO ===
+docker ps --format "table {{.Names}}\t{{.Status}}"
+
+# === INICIAR WSO2 ===
+cd "C:\Users\barce\Documents\mi brach\cail\cail\infrastructure"
+docker-compose up -d wso2-apim
+
+# === DETENER WSO2 ===
+docker-compose stop wso2-apim
+
+# === VER LOGS ===
+docker logs wso2-api-manager --tail 100
+
+# === REINICIAR ===
+docker-compose restart wso2-apim
+```
+
+### 9.7 URLs del Portal WSO2
+
+| Portal | URL | Uso |
+|--------|-----|-----|
+| Publisher | https://localhost:9443/publisher | Crear/editar APIs |
+| Developer | https://localhost:9443/devportal | Documentación APIs |
+| Admin | https://localhost:9443/admin | Configuración global |
+| Carbon | https://localhost:9443/carbon | Administración sistema |
+
+**Credenciales:** `admin` / `admin`
+
+### 9.8 Próximos Pasos
+
+| Paso | Descripción | Estado |
+|------|-------------|--------|
+| 1 | Desplegar WSO2 | ✅ Completado |
+| 2 | Importar APIs (usuarios, ofertas, matching) | ⏳ Pendiente |
+| 3 | Configurar endpoints | ⏳ Pendiente |
+| 4 | Publicar APIs en el Gateway | ⏳ Pendiente |
+| 5 | Probar peticiones a través de WSO2 | ⏳ Pendiente |
+| 6 | Configurar políticas de throttling | ⏳ Pendiente |
 
 ---
 

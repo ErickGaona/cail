@@ -2,7 +2,7 @@
 
 **Versión:** 4.0  
 **Fecha de Creación:** 08 de Enero de 2026  
-**Última Actualización:** 13 de Enero de 2026  
+**Última Actualización:** 14 de Enero de 2026  
 **Responsable:** Erick Gaona (Test & Security)
 
 ---
@@ -52,7 +52,7 @@
 │  ├── ✅ Helmet (Security Headers) - 3 microservicios                        │
 │  ├── ✅ Rate Limiting General (100 req/15min)                               │
 │  ├── ✅ Rate Limiting Auth (10 req/15min - login/register)                  │
-│  ├── ✅ WSO2 API Gateway desplegado (local)                                 │
+│  ├── ✅ WSO2 API Gateway desplegado + 3 APIs publicadas                     │
 │  └── ✅ Upload CV validado (PDF, max 5MB) - por Alex                        │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -648,16 +648,29 @@ docker-compose restart wso2-apim
 
 **Credenciales:** `admin` / `admin`
 
-### 9.8 Próximos Pasos
+### 9.8 Estado de Implementacion WSO2 (14/01/2026)
 
 | Paso | Descripción | Estado |
 |------|-------------|--------|
 | 1 | Desplegar WSO2 | ✅ Completado |
-| 2 | Importar APIs (usuarios, ofertas, matching) | ⏳ Pendiente |
-| 3 | Configurar endpoints | ⏳ Pendiente |
-| 4 | Publicar APIs en el Gateway | ⏳ Pendiente |
+| 2 | Importar APIs (usuarios, ofertas, matching) | ✅ Completado |
+| 3 | Configurar endpoints | ✅ Completado |
+| 4 | Publicar APIs en el Gateway | ✅ Completado |
 | 5 | Probar peticiones a través de WSO2 | ⏳ Pendiente |
-| 6 | Configurar políticas de throttling | ⏳ Pendiente |
+| 6 | Configurar políticas de throttling | ⏳ Opcional |
+
+### 9.9 APIs Publicadas en WSO2
+
+| API | Contexto | Version | Estado | Endpoint Backend |
+|-----|----------|---------|--------|------------------|
+| CAILUsuariosAPI | `/usuarios` | 1.0.0 | ✅ PUBLISHED | `host.docker.internal:8080` |
+| CAILOfertasAPI | `/ofertas` | 1.0.0 | ✅ PUBLISHED | `host.docker.internal:8083` |
+| CAILMatchingAPI | `/matching` | 1.0.0 | ✅ PUBLISHED | `host.docker.internal:8084` |
+
+**Acceso via WSO2 Gateway:**
+- `https://localhost:8243/usuarios/...`
+- `https://localhost:8243/ofertas/...`
+- `https://localhost:8243/matching/...`
 
 ---
 
@@ -665,7 +678,7 @@ docker-compose restart wso2-apim
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    ESTADO DEL TESTING - 13/01/2026                          │
+│                    ESTADO DEL TESTING - 14/01/2026                          │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  TESTS TOTALES                           Pasan    Total    Progreso        │
@@ -694,13 +707,14 @@ docker-compose restart wso2-apim
 │  PROXIMOS PASOS:                                                            │
 │  1. ⏳ Esperar implementacion de Dara/Cristobal (Matching)                  │
 │  2. ⏳ Notificar a Alex sobre validacion de passwords                       │
-│  3. ⏳ Importar APIs en WSO2 Gateway                                        │
-│  4. ⏳ Agregar express-validator a todos los modulos                        │
+│  3. ✅ Importar APIs en WSO2 Gateway (COMPLETADO 14/01)                     │
+│  4. ⏳ Probar peticiones via WSO2 Gateway                                   │
+│  5. ⏳ Agregar express-validator a todos los modulos                        │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-*Documento actualizado el 13 de Enero de 2026*  
+*Documento actualizado el 14 de Enero de 2026*  
 *Responsable: Erick Gaona (Test & Security)*

@@ -444,7 +444,7 @@ it('Token malformado debe retornar 401', async () => {
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  PASO 1: Desplegar WSO2                                      ✅ YA HECHO    │
+│  PASO 1: Desplegar WSO2                                      ✅ COMPLETADO  │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  Que hicimos: docker-compose up -d wso2-apim                                │
@@ -453,44 +453,46 @@ it('Token malformado debe retornar 401', async () => {
 └─────────────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  PASO 2: Decirle a WSO2 que APIs existen                     ⏳ PENDIENTE   │
+│  PASO 2: Importar APIs en WSO2                               ✅ COMPLETADO  │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  Que haremos: Importar 3 archivos YAML que describen nuestras APIs          │
-│               (usuarios, ofertas, matching)                                 │
+│  Que hicimos: Importar 3 archivos YAML en el Publisher Portal               │
 │                                                                             │
-│  Estos archivos dicen:                                                      │
-│  • Que rutas existen (/auth/login, /offers, etc.)                          │
-│  • Que metodos aceptan (GET, POST, PUT, DELETE)                            │
-│  • Que parametros reciben                                                   │
+│  APIs creadas:                                                              │
+│  • CAILUsuariosAPI   → /usuarios   (v1.0.0)                                │
+│  • CAILOfertasAPI    → /ofertas    (v1.0.0)                                │
+│  • CAILMatchingAPI   → /matching   (v1.0.0)                                │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  PASO 3: Decirle a WSO2 donde estan las funciones reales     ⏳ PENDIENTE   │
+│  PASO 3: Configurar endpoints                                ✅ COMPLETADO  │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  Que haremos: Configurar los "endpoints" (direcciones de las funciones)    │
+│  Que hicimos: Configurar hacia donde redirige WSO2                          │
 │                                                                             │
-│  Le decimos a WSO2:                                                         │
-│  • "Cuando alguien pida /usuarios/*, envialo a localhost:8080"             │
-│  • "Cuando alguien pida /ofertas/*, envialo a localhost:8083"              │
-│  • "Cuando alguien pida /matching/*, envialo a localhost:8084"             │
+│  Endpoints configurados:                                                    │
+│  • /usuarios/*  → http://host.docker.internal:8080                         │
+│  • /ofertas/*   → http://host.docker.internal:8083                         │
+│  • /matching/*  → http://host.docker.internal:8084                         │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  PASO 4: Publicar las APIs                                   ⏳ PENDIENTE   │
+│  PASO 4: Publicar las APIs                                   ✅ COMPLETADO  │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  Que haremos: Click en "Publish" para activar cada API                      │
+│  Que hicimos: Lifecycle → Publish en cada API                               │
 │                                                                             │
-│  Resultado: Las APIs quedan activas en el Gateway                           │
+│  Estado actual (14/01/2026):                                                │
+│  • CAILUsuariosAPI   → PUBLISHED ✅                                         │
+│  • CAILOfertasAPI    → PUBLISHED ✅                                         │
+│  • CAILMatchingAPI   → PUBLISHED ✅                                         │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  PASO 5: Probar que funciona                                 ⏳ AL FINAL    │
+│  PASO 5: Probar que funciona                                 ⏳ PENDIENTE   │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ANTES:   POST http://localhost:8080/auth/login                             │
@@ -498,6 +500,8 @@ it('Token malformado debe retornar 401', async () => {
 │                                                                             │
 │  DESPUES: POST https://localhost:8243/usuarios/auth/login                   │
 │                 (pasa por WSO2 primero)                                     │
+│                                                                             │
+│  NOTA: Requiere que los microservicios esten corriendo localmente          │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -573,4 +577,4 @@ cd cail/functions/usuarios && npm test
 
 ---
 
-*Documento creado para exposicion del modulo de Seguridad - CAIL 2026*
+*Documento actualizado el 14 de Enero de 2026 - Exposicion del modulo de Seguridad - CAIL*
